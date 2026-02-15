@@ -1,0 +1,343 @@
+{
+  "metadata": {
+    "title": "Activation Steering Across Scales, Architectures, and Quantization",
+    "date_consolidated": "2026-02-14",
+    "method": "DIM (Difference-in-Means) and COSMIC activation steering",
+    "tooling": "nnsight (canonical), raw hooks (invalidated)",
+    "gpu": "A10G (RunPod)",
+    "notes": [
+      "All canonical results use nnsight for both extraction and steering",
+      "Raw hook results were invalidated (F26: inconsistent across model sizes)",
+      "GPTQ quantization files failed (empty 110-byte files) — excluded",
+      "v3_quant_* and v3_quant_fixed_* had set_submodule errors for INT8/INT4 — superseded by v3_nnsight_quant_*",
+      "Coherent refusal rate = refusals that are grammatically coherent (not garbled/repetitive)"
+    ]
+  },
+
+  "phase1_architecture_comparison": {
+    "description": "Phase 1: Cross-architecture steering comparison at matched conditions",
+    "models": {
+      "qwen_7b": {
+        "model_id": "Qwen/Qwen2.5-7B-Instruct",
+        "family": "qwen",
+        "n_layers": 28,
+        "method": "DIM",
+        "layer_idx": 16,
+        "layer_pct": 0.6,
+        "multiplier": 15,
+        "n_prompts": 50,
+        "coherent_refusal_rate": 100.0,
+        "garbled_rate": 0.0,
+        "direction_norm": 26.22,
+        "outcome": "WORKS",
+        "source": "v3_nnsight_qwen-7b_20260213_120047.json"
+      },
+      "gemma_9b": {
+        "model_id": "google/gemma-2-9b-it",
+        "family": "gemma",
+        "n_layers": 42,
+        "method": "DIM",
+        "best_result": {
+          "layer_idx": 16,
+          "layer_pct": 0.4,
+          "multiplier": 25,
+          "n_prompts": 50,
+          "coherent_refusal_rate": 90.0,
+          "garbled_rate": 0.0,
+          "direction_norm": 92.95
+        },
+        "secondary_result": {
+          "layer_idx": 16,
+          "layer_pct": 0.4,
+          "multiplier": 20,
+          "n_prompts": 50,
+          "coherent_refusal_rate": 80.0,
+          "garbled_rate": 0.0,
+          "direction_norm": 92.95
+        },
+        "outcome": "WORKS (needs higher multiplier, different optimal depth)",
+        "source": "v3_nnsight_gemma-9b_20260213_121125.json"
+      },
+      "mistral_7b": {
+        "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+        "family": "mistral",
+        "n_layers": 32,
+        "method": "DIM + COSMIC",
+        "multiplier": 15,
+        "n_prompts": 50,
+        "results_by_layer": [
+          {"layer_pct": 0.5, "layer_idx": 16, "dim_coherent": 0.0, "dim_garbled": 100.0, "cosmic_coherent": 0.0, "cosmic_garbled": 100.0},
+          {"layer_pct": 0.6, "layer_idx": 19, "dim_coherent": 0.0, "dim_garbled": 100.0, "cosmic_coherent": 0.0, "cosmic_garbled": 100.0},
+          {"layer_pct": 0.7, "layer_idx": 22, "dim_coherent": 0.0, "dim_garbled": 100.0, "cosmic_coherent": 0.0, "cosmic_garbled": 100.0}
+        ],
+        "outcome": "FAILS — all outputs garbled at all layers",
+        "failure_mode": "Repetition loops (e.g., 'illegal illegal illegal...')",
+        "source": "v3_phase1_family_sweep_20260212_125230.json"
+      }
+    }
+  },
+
+  "phase2_qwen_size_sweep": {
+    "description": "Phase 2: Qwen family size scaling (3B → 32B) using DIM at 15x multiplier",
+    "method": "nnsight-DIM",
+    "multiplier": 15,
+    "n_prompts": 50,
+    "models": {
+      "qwen_3b": {
+        "model_id": "Qwen/Qwen2.5-3B-Instruct",
+        "params_b": 3,
+        "n_layers": 36,
+        "results_by_layer": [
+          {"layer_idx": 18, "layer_pct": 0.5, "coherent_refusal_rate": 80.0, "garbled_rate": 20.0, "direction_norm": 10.92},
+          {"layer_idx": 21, "layer_pct": 0.6, "coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 21.14},
+          {"layer_idx": 25, "layer_pct": 0.7, "coherent_refusal_rate": 70.0, "garbled_rate": 30.0, "direction_norm": 48.44}
+        ],
+        "best_layer": 21,
+        "best_layer_pct": 0.6,
+        "best_coherent": 100.0,
+        "source": "v3_nnsight_qwen-3b_20260213_121150.json"
+      },
+      "qwen_7b": {
+        "model_id": "Qwen/Qwen2.5-7B-Instruct",
+        "params_b": 7,
+        "n_layers": 28,
+        "results_by_layer": [
+          {"layer_idx": 14, "layer_pct": 0.5, "coherent_refusal_rate": 86.7, "garbled_rate": 0.0, "n_prompts": 30, "multiplier": 15, "source": "v3_gap_fill_qwen-7b-gaps_20260214_175701.json"},
+          {"layer_idx": 16, "layer_pct": 0.6, "coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 26.22, "n_prompts": 50, "source": "v3_nnsight_qwen-7b_20260213_120047.json"},
+          {"layer_idx": 16, "layer_pct": 0.6, "coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "n_prompts": 30, "multiplier": 15, "source": "v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json", "notes": "from quant sweep"},
+          {"layer_idx": 19, "layer_pct": 0.7, "coherent_refusal_rate": 16.7, "garbled_rate": 0.0, "n_prompts": 30, "multiplier": 15, "source": "v3_gap_fill_qwen-7b-gaps_20260214_175701.json"}
+        ],
+        "best_layer": 16,
+        "best_layer_pct": 0.6,
+        "best_coherent": 100.0,
+        "source": "v3_nnsight_qwen-7b_20260213_120047.json"
+      },
+      "qwen_14b": {
+        "model_id": "Qwen/Qwen2.5-14B-Instruct",
+        "params_b": 14,
+        "n_layers": 48,
+        "results_by_layer": [
+          {"layer_idx": 24, "layer_pct": 0.5, "coherent_refusal_rate": 90.0, "garbled_rate": 10.0, "direction_norm": 33.05},
+          {"layer_idx": 28, "layer_pct": 0.6, "coherent_refusal_rate": 90.0, "garbled_rate": 0.0, "direction_norm": 67.05},
+          {"layer_idx": 33, "layer_pct": 0.7, "coherent_refusal_rate": 0.0, "garbled_rate": 0.0, "direction_norm": 176.92}
+        ],
+        "best_layer": 24,
+        "best_layer_pct": 0.5,
+        "best_coherent": 90.0,
+        "source": "v3_nnsight_qwen-14b_20260213_121333.json"
+      },
+      "qwen_32b": {
+        "model_id": "Qwen/Qwen2.5-32B-Instruct",
+        "params_b": 32,
+        "n_layers": 64,
+        "results_by_layer": [
+          {"layer_idx": 32, "layer_pct": 0.5, "coherent_refusal_rate": 60.0, "garbled_rate": 0.0, "direction_norm": 63.16},
+          {"layer_idx": 38, "layer_pct": 0.6, "coherent_refusal_rate": 20.0, "garbled_rate": 0.0, "direction_norm": 84.85},
+          {"layer_idx": 44, "layer_pct": 0.7, "coherent_refusal_rate": 10.0, "garbled_rate": 0.0, "direction_norm": 165.17}
+        ],
+        "best_layer": 32,
+        "best_layer_pct": 0.5,
+        "best_coherent": 60.0,
+        "source": "v3_nnsight_qwen-32b_20260213_121619.json"
+      }
+    }
+  },
+
+  "phase2_gemma_size_sweep": {
+    "description": "Phase 2: Gemma family size scaling (2B → 27B) using DIM at 25x multiplier",
+    "method": "nnsight-DIM",
+    "multiplier": 25,
+    "n_prompts": 50,
+    "models": {
+      "gemma_2b": {
+        "model_id": "google/gemma-2-2b-it",
+        "params_b": 2,
+        "n_layers": 26,
+        "results_by_layer": [
+          {"layer_idx": 7, "layer_pct": 0.3, "coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 24.32},
+          {"layer_idx": 10, "layer_pct": 0.4, "coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 53.03},
+          {"layer_idx": 13, "layer_pct": 0.5, "coherent_refusal_rate": 70.0, "garbled_rate": 0.0, "direction_norm": 132.89},
+          {"layer_idx": 15, "layer_pct": 0.6, "coherent_refusal_rate": 30.0, "garbled_rate": 0.0, "direction_norm": 155.97}
+        ],
+        "best_layer": 7,
+        "best_layer_pct": 0.3,
+        "best_coherent": 100.0,
+        "source": "v3_gemma_sweep_gemma-2b_20260213_143851.json"
+      },
+      "gemma_9b": {
+        "model_id": "google/gemma-2-9b-it",
+        "params_b": 9,
+        "n_layers": 42,
+        "old_50prompt_results": [
+          {"layer_idx": 16, "layer_pct": 0.4, "multiplier": 20, "coherent_refusal_rate": 80.0, "garbled_rate": 0.0, "direction_norm": 92.95, "n_prompts": 50},
+          {"layer_idx": 16, "layer_pct": 0.4, "multiplier": 25, "coherent_refusal_rate": 90.0, "garbled_rate": 0.0, "direction_norm": 92.95, "n_prompts": 50}
+        ],
+        "canonical_30prompt_25x_results": {
+          "description": "Canonical sweep: 30 prompts, 25× multiplier, multi-layer",
+          "results_by_layer": [
+            {"layer_idx": 12, "layer_pct": 0.3, "coherent_refusal_rate": 96.7, "garbled_rate": 0.0},
+            {"layer_idx": 16, "layer_pct": 0.4, "coherent_refusal_rate": 96.7, "garbled_rate": 0.0},
+            {"layer_idx": 21, "layer_pct": 0.5, "coherent_refusal_rate": 73.3, "garbled_rate": 0.0},
+            {"layer_idx": 25, "layer_pct": 0.6, "coherent_refusal_rate": 40.0, "garbled_rate": 0.0}
+          ],
+          "source": "v3_gap_fill_gemma-9b-canonical_20260214_181837.json"
+        },
+        "gap_fill_15x_results": {
+          "description": "Gap fill: 30 prompts, 15× multiplier (bonus data)",
+          "results_by_layer": [
+            {"layer_idx": 12, "layer_pct": 0.3, "coherent_refusal_rate": 76.7, "garbled_rate": 0.0},
+            {"layer_idx": 21, "layer_pct": 0.5, "coherent_refusal_rate": 36.7, "garbled_rate": 0.0}
+          ],
+          "source": "v3_gap_fill_gemma-9b-canonical_20260214_181837.json"
+        },
+        "best_layer": 12,
+        "best_layer_pct": 0.3,
+        "best_coherent": 96.7,
+        "notes": "Canonical 30-prompt/25x sweep shows 96.7% at both 30% and 40% depth, superseding old 90% from 50-prompt set"
+      },
+      "gemma_27b": {
+        "model_id": "google/gemma-2-27b-it",
+        "params_b": 27,
+        "n_layers": 46,
+        "results_by_layer": [
+          {"layer_idx": 13, "layer_pct": 0.3, "coherent_refusal_rate": 0.0, "garbled_rate": 100.0, "direction_norm": 353.25},
+          {"layer_idx": 18, "layer_pct": 0.4, "coherent_refusal_rate": 0.0, "garbled_rate": 100.0, "direction_norm": null},
+          {"layer_idx": 23, "layer_pct": 0.5, "coherent_refusal_rate": 0.0, "garbled_rate": 100.0, "direction_norm": null},
+          {"layer_idx": 27, "layer_pct": 0.6, "coherent_refusal_rate": 0.0, "garbled_rate": 100.0, "direction_norm": null}
+        ],
+        "best_layer": null,
+        "best_coherent": 0.0,
+        "notes": "Genuinely unsteerable — direction norms 351-2352, empty outputs at all layers. Tested with bfloat16.",
+        "source": "v3_gemma_sweep_gemma-27b_20260213_145411.json"
+      }
+    }
+  },
+
+  "phase2_cosmic_vs_dim": {
+    "description": "Phase 2: DIM vs Real COSMIC head-to-head comparison using full COSMIC algorithm (multi-position, forward-pass scoring)",
+    "notes": [
+      "COSMIC_REAL uses cosmic_real.py — full algorithm with layer/position search",
+      "Earlier v3_cosmic_cmp_* used simplified SVD (NOT real COSMIC) — included for reference but COSMIC_REAL is canonical",
+      "DIM_OPT = DIM at its own best layer; DIM@COSMIC_L = DIM at COSMIC's selected layer"
+    ],
+    "real_cosmic_results": {
+      "qwen_3b": {
+        "model_id": "Qwen/Qwen2.5-3B-Instruct",
+        "n_prompts": 50,
+        "multiplier": 15,
+        "cosmic_layer": 18,
+        "cosmic_coherent": 100.0,
+        "dim_optimal_layer": 21,
+        "dim_coherent": 100.0,
+        "cosine_similarity": 0.763,
+        "cosmic_best_score": 1.511,
+        "source": "v3_cosmic_real_qwen-3b_20260213_133054.json"
+      },
+      "qwen_14b": {
+        "model_id": "Qwen/Qwen2.5-14B-Instruct",
+        "n_prompts": 50,
+        "multiplier": 15,
+        "cosmic_layer": 23,
+        "cosmic_coherent": 90.0,
+        "dim_optimal_layer": 24,
+        "dim_coherent": 90.0,
+        "cosine_similarity": 0.537,
+        "cosmic_best_score": 1.492,
+        "source": "v3_cosmic_real_qwen-14b_20260213_133844.json"
+      },
+      "qwen_32b": {
+        "model_id": "Qwen/Qwen2.5-32B-Instruct",
+        "n_prompts": 50,
+        "multiplier": 15,
+        "cosmic_layer": 43,
+        "cosmic_coherent": 10.0,
+        "dim_optimal_layer": 32,
+        "dim_coherent": 60.0,
+        "cosine_similarity": 0.533,
+        "cosmic_best_score": 1.481,
+        "notes": "COSMIC selects L43 (67% depth) but optimal is L32 (50%). COSMIC's scoring fails to account for shallower-with-size pattern.",
+        "source": "v3_cosmic_real_qwen-32b_20260213_133604.json"
+      },
+      "gemma_9b": {
+        "model_id": "google/gemma-2-9b-it",
+        "n_prompts": 50,
+        "multiplier": 25,
+        "cosmic_layer": 19,
+        "cosmic_coherent": 70.0,
+        "dim_optimal_layer": 16,
+        "dim_coherent": 90.0,
+        "cosine_similarity": 0.838,
+        "cosmic_best_score": 1.388,
+        "source": "v3_cosmic_real_gemma-9b_20260213_133251.json"
+      }
+    },
+    "simplified_cosmic_results": {
+      "note": "These used compute_cosmic_direction() (simplified SVD) — NOT the real COSMIC algorithm. Included for completeness but not canonical.",
+      "qwen_3b": {"dim": 100.0, "cosmic_simplified": 20.0, "cosine": 0.276},
+      "qwen_14b": {"dim": 90.0, "cosmic_simplified": 0.0, "cosine": 0.130},
+      "qwen_32b": {"dim": 60.0, "cosmic_simplified": 10.0, "cosine": 0.041},
+      "gemma_9b": {"dim": 90.0, "cosmic_simplified": 10.0, "cosine": 0.112}
+    }
+  },
+
+  "phase2_multiplier_sweep": {
+    "description": "Phase 2: Multiplier sensitivity on Qwen 32B at L32 (50% depth)",
+    "model_id": "Qwen/Qwen2.5-32B-Instruct",
+    "layer_idx": 32,
+    "layer_pct": 0.5,
+    "direction_norm": 63.16,
+    "n_prompts": 50,
+    "results": [
+      {"multiplier": 15, "coherent_refusal_rate": 60.0, "garbled_rate": 0.0},
+      {"multiplier": 20, "coherent_refusal_rate": 20.0, "garbled_rate": 0.0},
+      {"multiplier": 25, "coherent_refusal_rate": 0.0, "garbled_rate": 90.0}
+    ],
+    "source": "v3_qwen32b_mult_20260213_143821.json"
+  },
+
+  "phase3_quantization": {
+    "description": "Phase 3: Quantization robustness using nnsight with bitsandbytes INT8/INT4",
+    "notes": [
+      "Canonical results from 30-prompt nnsight sweep (latest run)",
+      "Direction extracted from FP16 model, applied to quantized models",
+      "Earlier v3_quant_fixed_* had set_submodule errors for INT8/INT4 — only FP16 worked"
+    ],
+    "qwen_7b": {
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "layer_idx": 16,
+      "multiplier": 15,
+      "n_prompts": 30,
+      "results": {
+        "fp16": {"coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 26.22, "cosine_vs_fp16": 1.0},
+        "int8": {"coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 25.93, "cosine_vs_fp16": 0.994},
+        "int4": {"coherent_refusal_rate": 100.0, "garbled_rate": 0.0, "direction_norm": 25.58, "cosine_vs_fp16": 0.972}
+      },
+      "conclusion": "Perfect robustness — steering survives all quantization levels at 7B scale",
+      "source": "v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json"
+    },
+    "qwen_32b": {
+      "model_id": "Qwen/Qwen2.5-32B-Instruct",
+      "layer_idx": 32,
+      "multiplier": 15,
+      "n_prompts": 30,
+      "results": {
+        "fp16": {"coherent_refusal_rate": 76.7, "garbled_rate": 0.0, "direction_norm": 63.16, "cosine_vs_fp16": 1.0},
+        "int8": {"coherent_refusal_rate": 83.3, "garbled_rate": 0.0, "direction_norm": 62.62, "cosine_vs_fp16": 0.991},
+        "int4": {"coherent_refusal_rate": 56.7, "garbled_rate": 0.0, "direction_norm": 63.55, "cosine_vs_fp16": 0.974}
+      },
+      "conclusion": "Size-dependent degradation — INT4 drops 20pp at 32B but INT8 slightly exceeds FP16 (within noise)",
+      "source": "v3_nnsight_quant_qwen-32b_sweep_20260214_155648.json"
+    }
+  },
+
+  "key_findings": {
+    "F20_inverse_scaling": "Steering effectiveness decreases monotonically with model size across Qwen (100%→76.7%) and Gemma (100%→0%)",
+    "F21_optimal_layer_shifts": "Optimal steering depth moves shallower with size: Qwen 3B/7B @ 60%, 14B @ 50-60%, 32B @ 50%",
+    "F22_dim_geq_cosmic": "DIM matches or outperforms real COSMIC across all 4 tested models",
+    "F23_norm_predicts_failure": "Direction norms >100 predict steering failure; norms 20-90 are the working range",
+    "F24_narrow_window_at_scale": "Qwen 32B has narrow multiplier window (15x works, 25x = garbled). Smaller models tolerate wider ranges.",
+    "F25_gemma27b_unsteerable": "Gemma 27B genuinely unsteerable — direction norms 351-2352, all outputs garbled",
+    "F17_mistral_fails": "Mistral 7B fails completely — all layers produce garbled output with both methods",
+    "quantization_robustness": "7B: perfectly robust (100% across FP16/INT8/INT4). 32B: INT4 drops 20pp, INT8 stable."
+  }
+}
