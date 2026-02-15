@@ -1,6 +1,6 @@
 # Inverse Scaling in Activation Steering: Architecture and Scale Dependence of Refusal Manipulation
 
-*Draft v2 — Unified 2026-02-14*
+*Draft v2: Unified 2026-02-14*
 
 ---
 
@@ -129,7 +129,7 @@ We refer to this as Difference-in-Means (DIM), following the terminology of Ardi
 
 **COSMIC.** We implement the full COSMIC algorithm \citep{siu2025cosmic}, which differs from DIM in two respects. First, direction extraction uses SVD rather than mean-difference: activations from contrastive prompt pairs are collected across multiple token positions, and the top singular vector of the resulting matrix serves as the steering direction. Second, COSMIC includes an automated layer selection procedure that scores candidate layers by aggregating cosine similarities of their directions against all other layers, selecting the layer with the highest agreement score.^[An earlier version of our pipeline used a simplified SVD computation that did not implement the full multi-position scoring. All COSMIC results reported here use the complete algorithm, which was validated after this discrepancy was identified.]
 
-**Extraction tooling.** Both methods use the `nnsight` library \citep{fiottokaufman2024nnsight} for activation extraction and steering intervention. This choice is not incidental. We discovered that extracting directions with raw PyTorch `register_forward_hook` calls produces fundamentally different vectors: at least on Qwen 7B, nnsight-extracted directions achieve 100% coherent refusal while hook-extracted directions achieve only 10%, despite targeting the same layer with the same contrastive dataset.^[We further validated this by testing raw hooks for steering (not just extraction). Results were inconsistent across scales — 100% on Qwen 7B, 100% on Qwen 32B (vs. 77% with nnsight, indicating over-steering), and 50% on Qwen 3B (vs. 100% with nnsight, indicating under-steering). nnsight produces consistent, reproducible interventions across all models tested.] We have not identified the specific mechanism but hypothesize it involves in-place tensor operations in transformer implementations that corrupt activation reads via standard hooks. We regard this as a notable preliminary finding: **extraction tooling is a hidden variable** that can dominate algorithmic choice. Validation on additional architectures is needed to confirm generality.
+**Extraction tooling.** Both methods use the `nnsight` library \citep{fiottokaufman2024nnsight} for activation extraction and steering intervention. This choice is not incidental. We discovered that extracting directions with raw PyTorch `register_forward_hook` calls produces fundamentally different vectors: at least on Qwen 7B, nnsight-extracted directions achieve 100% coherent refusal while hook-extracted directions achieve only 10%, despite targeting the same layer with the same contrastive dataset.^[We further validated this by testing raw hooks for steering (not just extraction). Results were inconsistent across scales: 100% on Qwen 7B, 100% on Qwen 32B (vs. 77% with nnsight, indicating over-steering), and 50% on Qwen 3B (vs. 100% with nnsight, indicating under-steering). nnsight produces consistent, reproducible interventions across all models tested.] We have not identified the specific mechanism but hypothesize it involves in-place tensor operations in transformer implementations that corrupt activation reads via standard hooks. We regard this as a notable preliminary finding: **extraction tooling is a hidden variable** that can dominate algorithmic choice. Validation on additional architectures is needed to confirm generality.
 
 Both DIM and COSMIC use approximately 10 contrastive prompt pairs (matched harmful/harmless requests); full prompt lists are provided in Appendix A.
 
@@ -141,9 +141,11 @@ At inference time, we add the scaled direction vector to the residual stream at 
 
 $$h_k' = h_k + \alpha \cdot \hat{d} \quad \forall k \in \{l, l+1, \ldots, N\}$$
 
-where $l$ is the target layer, $N$ is the final layer, $\alpha$ is the steering multiplier, and $\hat{d}$ is the unit-normalized direction. The perturbation is applied identically at each layer from $l$ onward.^[This "all-subsequent-layers" protocol follows from our use of raw PyTorch forward hooks for generation — nnsight's tracing API does not support `.generate()`. We use nnsight for direction extraction (where graph-level tracing is critical for correct activation capture; see §4.2) and raw forward hooks for the steering intervention itself. The distinction matters less for steering than for extraction: adding a fixed vector to the residual stream is a simple write operation unaffected by the in-place operation issues that corrupt reads via hooks.]
+where $l$ is the target layer, $N$ is the final layer, $\alpha$ is the steering multiplier, and $\hat{d}$ is the unit-normalized direction. The perturbation is applied identically at each layer from $l$ onward.^[This "all-subsequent-layers" protocol follows from our use of raw PyTorch forward hooks for generation (nnsight's tracing API does not support `.generate()`). We use nnsight for direction extraction (where graph-level tracing is critical for correct activation capture; see §4.2) and raw forward hooks for the steering intervention itself. The distinction matters less for steering than for extraction: adding a fixed vector to the residual stream is a simple write operation unaffected by the in-place operation issues that corrupt reads via hooks.]
 
-We use **greedy decoding** (temperature = 0) throughout, which eliminates sampling variance but limits ecological validity (see §12). All multipliers are reported explicitly; we primarily use 15× for Qwen models and 25× for Gemma models.^[The multiplier difference reflects architectural differences in residual stream magnitude. At matched multipliers, Gemma produces mostly normal (unsteered) responses; 25× brings it into the effective steering range. We verified this with a controlled comparison: Gemma 9B at L12 yields 77% with 15× vs. 97% with 25× (n = 30 prompts each) — a 20pp gain from multiplier alone.]
+We use **greedy decoding** (temperature = 0) throughout, which eliminates sampling variance but limits ecological validity (see §12).
+
+**Multiplier selection protocol.** We use a two-stage procedure. First, we establish a family baseline from pilot sweeps: 15× for Qwen and 25× for Gemma. Second, we run targeted local sweeps around that baseline for critical conditions. For Qwen 32B, we sweep 15×/20×/25× at fixed layer (L32, 50% depth) and observe a narrow operating window: 15× works, 20× degrades, 25× collapses coherence (§5.6). For Gemma 9B, we run a controlled comparison at L12 showing 15× = 77% versus 25× = 97% (n = 30), so 25× is retained as the family default. We then keep the chosen family multiplier fixed within each main sweep unless a dedicated multiplier experiment is being run. All reported multipliers are explicit in tables and captions.^[The multiplier difference likely reflects architecture-dependent residual stream scale, but we do not claim global optimality. We optimize locally for the tested conditions and report those settings transparently.]
 
 ### 4.4 Evaluation
 
@@ -192,7 +194,7 @@ Mistral 7B, by contrast, produces only garbled output at every tested configurat
 
 For Gemma 9B, both L12 (30% depth) and L16 (40% depth) achieve 97% coherent refusal, so we report both as co-optimal.
 
-Mistral fails completely, not by resisting steering (which would produce normal responses) but by entering degenerate repetition loops at every tested layer (50%, 60%, 70%) with both DIM and COSMIC. Both methods produce 0% coherent refusal and 100% garbled output on Mistral, despite extracting nearly orthogonal directions.^[The DIM–COSMIC cosine similarity on Mistral is 0.008 — the two methods extract nearly orthogonal directions, suggesting that neither has found a meaningful refusal direction in Mistral's residual stream. When two independent methods both fail to find a consistent direction, the parsimonious explanation is that refusal is not linearly represented in this architecture's residual stream.] We initially misinterpreted this as "COSMIC maintains coherence" before verifying that COSMIC's outputs were garbled, not normal — a reminder that inspecting actual outputs is essential.
+Mistral fails completely, not by resisting steering (which would produce normal responses) but by entering degenerate repetition loops at every tested layer (50%, 60%, 70%) with both DIM and COSMIC. Both methods produce 0% coherent refusal and 100% garbled output on Mistral, despite extracting nearly orthogonal directions.^[The DIM–COSMIC cosine similarity on Mistral is 0.008 (the two methods extract nearly orthogonal directions), suggesting that neither has found a meaningful refusal direction in Mistral's residual stream. When two independent methods both fail to find a consistent direction, the parsimonious explanation is that refusal is not linearly represented in this architecture's residual stream.] We initially misinterpreted this as "COSMIC maintains coherence" before verifying that COSMIC's outputs were garbled, not normal. This is a reminder that inspecting actual outputs is essential.
 
 **Controls.** The failure is architecture-specific, not scale-dependent: Qwen 7B and Mistral 7B have the same parameter count but opposite outcomes. Mistral's sliding window attention or its distinct alignment training may produce refusal representations that are not linearly separable in the residual stream.
 
@@ -287,7 +289,7 @@ The most striking finding is the *divergence between geometric and functional pr
 
 ### 5.6 Multiplier Sensitivity at Scale
 
-**Setup.** We sweep multipliers on Qwen 32B at L32 (50% depth) to characterize the effective steering window.^[The 15× baseline here (60%, n = 50) differs from the 30-prompt quantization baseline (77%, n = 30 in Table 5). This prompt-set sensitivity at 32B — the only scale showing intermediate refusal rates — is itself evidence of the model operating near a phase boundary.]
+**Setup.** We sweep multipliers on Qwen 32B at L32 (50% depth) to characterize the effective steering window.^[The 15× baseline here (60%, n = 50) differs from the 30-prompt quantization baseline (77%, n = 30 in Table 5). This prompt-set sensitivity at 32B (the only scale showing intermediate refusal rates) is itself evidence of the model operating near a phase boundary.]
 
 **Table 6:** Multiplier sensitivity at Qwen 32B (n = 50).
 
@@ -309,7 +311,7 @@ Mistral 7B's complete failure deserves its own treatment rather than a passing m
 
 The setup: Mistral 7B Instruct v0.3 and Qwen 7B Instruct have nearly identical parameter counts, both are instruction-tuned, and both receive identical steering interventions (DIM extraction from the same contrastive prompt template, applied from the target layer onward at 15× multiplier). Qwen produces 100% coherent refusals. Mistral produces 100% garbled output (repetition loops like "illegal illegal illegal...") at every layer tested (50%, 60%, 70% depth) and with both DIM and COSMIC directions (n=50).
 
-This is not a method failure in the usual sense. The direction extraction succeeds: the vectors have reasonable norms and the contrastive separation is present in Mistral's activations. But the model's response to residual stream perturbation is categorically different from Qwen's or Gemma's. Both DIM and COSMIC produce garbled output on Mistral; neither produces normal (unsteered) responses.^[The cosine similarity between DIM and COSMIC directions on Mistral is 0.008 — essentially orthogonal. Yet both produce the same failure mode (garbled output), suggesting the failure is not about the specific direction but about Mistral's response to *any* residual stream perturbation of this magnitude.]
+This is not a method failure in the usual sense. The direction extraction succeeds: the vectors have reasonable norms and the contrastive separation is present in Mistral's activations. But the model's response to residual stream perturbation is categorically different from Qwen's or Gemma's. Both DIM and COSMIC produce garbled output on Mistral; neither produces normal (unsteered) responses.^[The cosine similarity between DIM and COSMIC directions on Mistral is 0.008 (essentially orthogonal). Yet both produce the same failure mode (garbled output), suggesting the failure is not about the specific direction but about Mistral's response to *any* residual stream perturbation of this magnitude.]
 
 We can enumerate possible explanations but cannot distinguish between them with our current data:
 
@@ -345,9 +347,9 @@ Our central finding, that steering effectiveness drops monotonically with model 
 
 **The distributed representation hypothesis.** Elhage et al. \citep{elhage2022toy} showed that neural networks represent more features than they have dimensions by superimposing features in shared subspaces. Larger models, having greater capacity and training on more data, may represent refusal in a more polysemantic way, entangling it with related concepts (safety, ethics, uncertainty, helpfulness) that partially overlap in activation space. A single DIM vector captures the average direction of this entangled cluster, but as the cluster spreads across more dimensions, the projection onto any single direction captures a decreasing fraction of the total refusal signal. Our observation that Gemma 27B produces direction norms of 350+ (compared to 24–93 for steerable models) is consistent with this hypothesis: the extracted "direction" may be a noisy average across a high-dimensional manifold rather than a clean one-dimensional feature.^[We say "consistent with" rather than "evidence for" because high norms could also result from extraction artifacts, numerical precision issues in bfloat16, or architecture-specific activation statistics. We have n=1 architecture at this scale.]
 
-**The redundancy hypothesis.** Larger models may implement refusal via redundant pathways across multiple layers. Perturbing a subset of layers leaves the others to compensate. Wei et al. \citep{wei2024brittleness} found that safety-critical parameters are sparse (~3% of weights), but 3% of a larger parameter space provides more room for redundant implementation. Under this hypothesis, multi-layer nonlinear methods like RFM \citep{beaglehole2025universal} succeed at scale precisely because they intervene across all pathways simultaneously.
+**The redundancy hypothesis.** Larger models may implement refusal via redundant pathways across multiple layers. Perturbing a subset of layers leaves the others to compensate. Wei et al. \citep{wei2024brittleness} found that safety-critical parameters are sparse (~3% of weights), but 3% of a larger parameter space provides more room for redundant implementation. Our intervention is multi-layer in application (the same direction added from layer $l$ through $N$), but it is still a single shared linear direction. Methods that learn richer per-layer or nonlinear interventions can be strictly more expressive. Under this hypothesis, multi-layer nonlinear methods like RFM \citep{beaglehole2025universal} succeed at scale precisely because they intervene across all pathways simultaneously.
 
-**The narrowing-window hypothesis.** Our multiplier sweep on Qwen 32B reveals that the effective steering window narrows dramatically at scale: 15× works (60%), 20× partially works (20%), 25× produces garbled output (0% coherent, 90% garbled). Smaller models tolerate a wide range of multipliers; at 3B and 7B, every tested multiplier produces 100%. One speculative interpretation: larger models operate closer to the edge of a nonlinear response regime, where the intervention must be precisely calibrated — strong enough to override refusal but weak enough to preserve generation coherence.
+**The narrowing-window hypothesis.** Our multiplier sweep on Qwen 32B reveals that the effective steering window narrows dramatically at scale: 15× works (60%), 20× partially works (20%), 25× produces garbled output (0% coherent, 90% garbled). Smaller models tolerate a wide range of multipliers; at 3B and 7B, every tested multiplier produces 100%. One speculative interpretation: larger models operate closer to the edge of a nonlinear response regime, where the intervention must be precisely calibrated (strong enough to override refusal but weak enough to preserve generation coherence).
 
 These hypotheses are not mutually exclusive. All three may contribute, and our data cannot distinguish their relative contributions. What we can say is that the pattern (monotonic degradation across an architecture family that holds everything constant except scale) constrains the space of explanations. Whatever causes the degradation is a function of scale itself, not of architecture changes between model sizes.
 
@@ -355,9 +357,9 @@ These hypotheses are not mutually exclusive. All three may contribute, and our d
 
 ### 8.2 Why Simple Beats Complex (and When It Won't)
 
-The consistent parity or superiority of DIM over COSMIC across all tested conditions echoes a recurring pattern: simple baselines match complex methods when the underlying signal is strong and low-dimensional. Marks and Tegmark \citep{marks2023geometry} demonstrated precisely this for truth representations — difference-in-mean probes generalize as well as more complex classifiers.
+The consistent parity or superiority of DIM over COSMIC across all tested conditions echoes a recurring pattern: simple baselines match complex methods when the underlying signal is strong and low-dimensional. Marks and Tegmark \citep{marks2023geometry} demonstrated precisely this for truth representations (difference-in-mean probes generalize as well as more complex classifiers).
 
-The theoretical argument is straightforward. If refusal is genuinely mediated by a single direction \citep{arditi2024refusal}, then the optimal estimator for that direction given contrastive data is the mean difference — which is exactly DIM. SVD-based methods like COSMIC extract the direction of maximum *variance*, which coincides with the mean shift when the signal dominates noise, but can diverge when it does not.
+The theoretical argument is straightforward. If refusal is genuinely mediated by a single direction \citep{arditi2024refusal}, then the optimal estimator for that direction given contrastive data is the mean difference (which is exactly DIM). SVD-based methods like COSMIC extract the direction of maximum *variance*, which coincides with the mean shift when the signal dominates noise, but can diverge when it does not.
 
 COSMIC's automated layer selection compounds this at scale. Its scoring function (cosine similarity agreement aggregated across layers) assumes that the correct layer will produce a direction consistent with most other layers. This holds when models are small and the refusal direction is concentrated. At 32B with 64 layers, the aggregation becomes noisy, and the scoring function selects L43 (67% depth) when the optimum is L32 (50%). A human applying the heuristic "use 50% depth for large models" outperforms the algorithm.
 
@@ -377,7 +379,7 @@ We include this section in the spirit of laying out a hypothesis space that othe
 ---
 
 > **Hypothesis 2: Mistral encodes refusal nonlinearly.**  
-> Mistral's complete failure under linear steering, combined with the fact that refusal directions *can* be extracted (reasonable norms, contrastive separation), suggests that Mistral may implement refusal through a mechanism that is not well-approximated by a single linear direction in the residual stream — possibly through attention head-level gating or a nonlinear interaction between the residual stream and attention patterns. *Testable prediction:* Probing Mistral with nonlinear methods (e.g., RFM, or steering at the attention head level rather than the residual stream) should succeed where DIM fails. If it does not, the failure is more likely an extraction artifact than a representational difference.
+> Mistral's complete failure under linear steering, combined with the fact that refusal directions *can* be extracted (reasonable norms, contrastive separation), suggests that Mistral may implement refusal through a mechanism that is not well-approximated by a single linear direction in the residual stream. This may be implemented through attention head-level gating or a nonlinear interaction between the residual stream and attention patterns. *Testable prediction:* Probing Mistral with nonlinear methods (e.g., RFM, or steering at the attention head level rather than the residual stream) should succeed where DIM fails. If it does not, the failure is more likely an extraction artifact than a representational difference.
 
 ---
 
@@ -409,15 +411,17 @@ These results bear directly on the viability of representation engineering as a 
 
 We have stated caveats inline throughout the paper where they are most relevant. This section collects them systematically for readers who want the complete accounting.
 
-**Sample size and statistical power.** Our primary metric is the coherent refusal rate over 30 benign test prompts with greedy decoding (temperature = 0). Greedy decoding eliminates sampling variance, making each prompt a deterministic binary outcome. For n=30, 95% Wilson score confidence intervals are approximately ±13 percentage points for rates near 50%, and ±12pp for rates near 100%. For the 50-prompt sweeps, intervals are narrower: ±10pp near 50%, ±7pp near 100%. The large effects we report (100% vs 0%, or 100% vs 60%) survive this uncertainty; intermediate comparisons (e.g., 83% INT8 vs 77% FP16 at 32B) are not statistically distinguishable. We report point estimates in prose (rounded) and precise values in tables, and caution against over-interpreting small differences. The scaling comparison — 100% at 3B vs 60% at 32B (n=50) — is significant (Fisher's exact test, p = 0.005).
+**Sample size and statistical power.** Our primary metric is the coherent refusal rate over 30 benign test prompts with greedy decoding (temperature = 0). Greedy decoding eliminates sampling variance, making each prompt a deterministic binary outcome. For n=30, 95% Wilson score confidence intervals are approximately ±13 percentage points for rates near 50%, and ±12pp for rates near 100%. For the 50-prompt sweeps, intervals are narrower: ±10pp near 50%, ±7pp near 100%. The large effects we report (100% vs 0%, or 100% vs 60%) survive this uncertainty; intermediate comparisons (e.g., 83% INT8 vs 77% FP16 at 32B) are not statistically distinguishable. We report point estimates in prose (rounded) and precise values in tables, and caution against over-interpreting small differences. The scaling comparison (100% at 3B vs 60% at 32B, n=50) is significant (Fisher's exact test, p = 0.005).
 
-**Single behavior and direction.** We evaluate only the induction of false refusals on benign prompts, not the suppression of refusal on harmful prompts. The relationship between these two directions of steering may not be symmetric. We study only refusal. Steering for other safety-relevant behaviors — sycophancy, honesty, toxicity — may exhibit different scaling patterns, different architecture dependencies, and different sensitivity to quantization. Refusal may be unusually amenable to single-direction steering \citep{arditi2024refusal}; other behaviors may be inherently multi-dimensional.
+**Single behavior and direction.** We evaluate only the induction of false refusals on benign prompts, not the suppression of refusal on harmful prompts. The relationship between these two directions of steering may not be symmetric. We study only refusal. Steering for other safety-relevant behaviors (sycophancy, honesty, toxicity) may exhibit different scaling patterns, different architecture dependencies, and different sensitivity to quantization. Refusal may be unusually amenable to single-direction steering \citep{arditi2024refusal}; other behaviors may be inherently multi-dimensional.
 
 **Architecture coverage.** Two working architecture families (Qwen, Gemma) and one failure (Mistral) from three families tested. Llama was excluded due to a technical failure in rope configuration under nnsight, and Phi due to nnsight incompatibility. Our conclusions about architecture dependence rest on n=3 families, with n=1 for the failure case. This is sufficient to demonstrate that architecture matters but insufficient to characterize which architectural features predict steerability.
 
 **DIM vs COSMIC fairness.** Our comparison gives DIM a structural advantage: DIM's layer is selected by sweeping across layers and choosing the best, while COSMIC uses automated selection. A fairer comparison would give COSMIC the same human-in-the-loop optimization, but this would defeat COSMIC's primary selling point (automation). We report COSMIC's automated performance as the relevant comparison for practitioners, while acknowledging that COSMIC with manual layer override would likely match DIM.
 
 **Greedy decoding only.** Real deployments use temperature > 0, which introduces sampling variance that could interact with steering. We chose greedy decoding for reproducibility but note this limits ecological validity.
+
+**Multiplier optimization coverage.** We did not globally optimize multipliers for every model-layer condition. We used family defaults with targeted sweeps in key cases (for example, Qwen 32B and Gemma 9B). Some failures in larger models may therefore reflect suboptimal gain selection, not only representational nonlinearity. This risk is partly mitigated by the explicit Qwen 32B sweep and Gemma 9B 15× vs 25× comparison, but it is not eliminated.
 
 **Extraction tooling dependency.** Our finding that nnsight and raw hooks produce different directions was tested on one model (Qwen 7B). We have not characterized *which* aspects of the extraction process cause the divergence, nor have we tested other extraction libraries (TransformerLens, Baukit). This finding should be treated as a flag for the community to investigate, not as a general conclusion.
 
@@ -648,7 +652,7 @@ All results are from `results/FINAL_RESULTS.json`. Coherent refusal rate = perce
 
 ---
 
-## B.1 Qwen 2.5 Size Sweep — Full Layer Profiles
+## B.1 Qwen 2.5 Size Sweep: Full Layer Profiles
 
 Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless prompts.
 
@@ -664,10 +668,10 @@ Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless pr
 
 | Layer | Depth % | Coherent Refusal | Garbled | n | Direction Norm | Source |
 |-------|---------|-----------------|---------|---|---------------|--------|
-| L14 | 50% | 86.7% | 0.0% | 30 | — | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
+| L14 | 50% | 86.7% | 0.0% | 30 | - | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
 | **L16** | **60%** | **100.0%** | **0.0%** | **50** | **26.22** | v3_nnsight_qwen-7b_20260213_120047.json |
-| L16 | 60% | 100.0% | 0.0% | 30 | — | v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json (quant baseline) |
-| L19 | 70% | 16.7% | 0.0% | 30 | — | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
+| L16 | 60% | 100.0% | 0.0% | 30 | - | v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json (quant baseline) |
+| L19 | 70% | 16.7% | 0.0% | 30 | - | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
 
 ### Qwen 2.5-14B-Instruct (48 layers)
 
@@ -687,7 +691,7 @@ Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless pr
 
 ---
 
-## B.2 Gemma 2 Size Sweep — Full Layer Profiles
+## B.2 Gemma 2 Size Sweep: Full Layer Profiles
 
 Method: DIM @ 25x multiplier.
 
@@ -730,15 +734,15 @@ Method: DIM @ 25x multiplier.
 | Layer | Depth % | Coherent Refusal | Garbled | n | Direction Norm | Source |
 |-------|---------|-----------------|---------|---|---------------|--------|
 | L13 | 30% | 0.0% | 100.0% | 50 | 353.25 | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L18 | 40% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L23 | 50% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L27 | 60% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L18 | 40% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L23 | 50% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L27 | 60% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
 
 **Note:** Gemma 27B is genuinely unsteerable. Direction norms range from 351 to 2352. All outputs are empty/garbled at every layer tested. Tested with bfloat16 precision.
 
 ---
 
-## B.3 Mistral 7B — Architecture Failure
+## B.3 Mistral 7B: Architecture Failure
 
 Method: DIM + COSMIC @ 15x multiplier. Model: Mistral-7B-Instruct-v0.3 (32 layers).
 
@@ -800,7 +804,7 @@ Method: DIM @ 15x, n=30 prompts. Directions re-extracted within each quantized m
 
 ---
 
-## B.6 Multiplier Sensitivity — Qwen 32B
+## B.6 Multiplier Sensitivity: Qwen 32B
 
 Model: Qwen 2.5-32B-Instruct, L32 (50% depth), DIM extraction, n=50 prompts.
 
@@ -814,7 +818,7 @@ Model: Qwen 2.5-32B-Instruct, L32 (50% depth), DIM extraction, n=50 prompts.
 
 ---
 
-## B.7 Direction Norms — All Models at Best Layer
+## B.7 Direction Norms: All Models at Best Layer
 
 | Model | Family | Best Layer | Depth % | Direction Norm | Coherent Refusal | Outcome |
 |-------|--------|-----------|---------|---------------|-----------------|---------|
