@@ -1,6 +1,6 @@
 # V3 Experiment Plan: Cross-Family Layer-Targeted Refusal Steering
 
-**Status:** REVISED — Incorporates Professor's feedback, awaiting final review
+**Status:** REVISED — Incorporates reviewer's feedback, awaiting final review
 **Date:** 2026-02-12 (Revised)
 **Budget:** $58-95 total across 3 phases (hard stop at $100)
 **Timeline:** 7-8 days
@@ -13,7 +13,7 @@ Our key discovery: **layer position (~60% depth) is the critical variable for re
 
 This plan systematically tests whether the 60% layer hypothesis generalizes across model families, sizes, and quantization levels.
 
-**Key revisions from Professor review:**
+**Key revisions from reviewer review:**
 - Phase 1 tests **both DIM and COSMIC** on all families (not DIM-only)
 - Gemma/Phi prioritized; Llama/Mistral de-prioritized (reduced layer sweep)
 - 72B/70B models dropped from initial plan (re-evaluate after Phase 2)
@@ -43,7 +43,7 @@ Before running any experiments, verify that `cosmic_real.py` faithfully implemen
 - [ ] Every algorithmic step in `cosmic_real.py` maps to a specific section/equation in the COSMIC paper
 - [ ] All differences are documented with justification
 - [ ] Reproduction test passes (Qwen 7B L16 → 100% refusal)
-- [ ] Sohail signs off on verification report
+- [ ] Lead signs off on verification report
 
 **Estimated time:** 2-4 hours
 **Estimated cost:** ~$0.50 (one Qwen 7B validation run)
@@ -615,7 +615,7 @@ The previous COSMIC sweep failed on Qwen 32B with `'Qwen2ForCausalLM' object has
 1. Document all differences
 2. If differences are minor (e.g., sampling strategy): proceed with note
 3. If differences are fundamental (e.g., wrong objective function): fix before Phase 1
-4. If fix is non-trivial: escalate to Sohail, potentially delay Phase 1
+4. If fix is non-trivial: escalate to lead, potentially delay Phase 1
 
 ---
 
@@ -628,7 +628,7 @@ The previous COSMIC sweep failed on Qwen 32B with `'Qwen2ForCausalLM' object has
 | Morning | Audit `cosmic_real.py` against COSMIC paper | **YES — blocks Phase 1** |
 | Morning | Write `infrastructure/COSMIC_VERIFICATION.md` | No |
 | Afternoon | Run Qwen 7B reproduction test | No |
-| Afternoon | Get sign-off from Sohail | **Decision point** |
+| Afternoon | Get sign-off from lead | **Decision point** |
 
 ### Day 1 (Phase 1 Prep + Run)
 
@@ -644,7 +644,7 @@ The previous COSMIC sweep failed on Qwen 32B with `'Qwen2ForCausalLM' object has
 
 | Time | Task | Blocker? |
 |------|------|----------|
-| Morning | **REVIEW WITH SOHAIL:** Phase 1 results (both methods, all families) | Decision point |
+| Morning | **REVIEW:** Phase 1 results (both methods, all families) | Decision point |
 | Morning | Decide which families → Phase 2, compare DIM vs COSMIC per family | Depends on review |
 | Afternoon | Write `v3_size_sweep.py` (including layer validation) | No |
 | Afternoon | Smoke test 14B, 32B, 27B models | No |
@@ -663,7 +663,7 @@ The previous COSMIC sweep failed on Qwen 32B with `'Qwen2ForCausalLM' object has
 
 | Time | Task | Blocker? |
 |------|------|----------|
-| Morning | **REVIEW WITH SOHAIL:** Phase 2 results + size curves | Decision point |
+| Morning | **REVIEW:** Phase 2 results + size curves | Decision point |
 | Morning | Select Phase 3 models, evaluate if 72B needed | Depends on review |
 | Afternoon | Write `v3_quantization_sweep.py` | No |
 | Afternoon | Test INT8/INT4 loading + nnsight compatibility | No |
@@ -675,7 +675,7 @@ The previous COSMIC sweep failed on Qwen 32B with `'Qwen2ForCausalLM' object has
 | Day 6 | Run quantization sweep: bitsandbytes FP16/INT8/INT4 | No |
 | Day 6 | Run quantization sweep (large model) | No |
 | Day 7 | Final analysis: cross-direction cosines, aggregate plots | No |
-| Day 7 | **REVIEW WITH SOHAIL:** Full V3 results | Final review |
+| Day 7 | **REVIEW:** Full V3 results | Final review |
 
 ### Review Checkpoints
 
@@ -753,8 +753,8 @@ A "successful" steering is ONLY coherent refusal. Garbled output with refusal ke
 |------------|--------|------|
 | COSMIC audit | ✅ Done | 11:36 |
 | v3_shared.py | ✅ Done | 11:36 |
-| Professor review | ✅ Approved | 11:51 |
-| Sohail sign-off | ✅ Approved | 11:51 |
+| reviewer review | ✅ Approved | 11:51 |
+| Lead sign-off | ✅ Approved | 11:51 |
 
 **Key findings:**
 - 3 deviations documented (all acceptable for Phase 1)

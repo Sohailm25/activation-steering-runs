@@ -193,7 +193,7 @@ return activations + scale * direction[np.newaxis, :]
 - [x] All 3 deviations documented with severity assessment
 - [ ] **Steering application in validation sweep does NOT match paper** (Deviation 3 — documented)
 - [ ] **No train/validation split** (Deviation 2 — documented)
-- [ ] Sohail sign-off
+- [ ] Lead sign-off
 
 ---
 
@@ -225,7 +225,7 @@ return activations + scale * direction[np.newaxis, :]
 ## Sign-Off
 
 **Date:** 2026-02-12
-**Reviewer:** Professor
+**Reviewer:** reviewer
 **Status:** ✅ APPROVED
 
 ### Acceptance of Deviations
@@ -245,6 +245,6 @@ return activations + scale * direction[np.newaxis, :]
 
 ### Sign-Off Chain
 
-- [x] Ghost audit complete (2026-02-12)
-- [x] Professor review (2026-02-12) — APPROVED with notes
-- [x] Sohail sign-off (2026-02-12) — APPROVED, proceed to Phase 1
+- [x] executor audit complete (2026-02-12)
+- [x] reviewer review (2026-02-12) — APPROVED with notes
+- [x] Lead sign-off (2026-02-12) — APPROVED, proceed to Phase 1
