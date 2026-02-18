@@ -146,7 +146,6 @@ def extract_pyvene_raw(model_hf, tokenizer, layer_idx: int, prompts: List[str]) 
         raise RuntimeError(f"pyvene import failed: {e}")
 
     model_type = model_hf.config.model_type
-    # Current architectures in this project map to block_output
     if model_type not in ("qwen2", "gemma2", "llama", "mistral"):
         raise RuntimeError(f"pyvene unsupported model_type={model_type}")
 
@@ -160,14 +159,36 @@ def extract_pyvene_raw(model_hf, tokenizer, layer_idx: int, prompts: List[str]) 
         ]
     )
     imodel = pv.IntervenableModel(cfg, model=model_hf)
-
     device = next(model_hf.parameters()).device
+
+    def _run_collect(input_ids, seq_len):
+        errors = []
+        attempts = [
+            lambda: imodel({"input_ids": input_ids}, [{"sources->base": seq_len - 1}]),
+            lambda: imodel({"input_ids": input_ids}, unit_locations={"sources->base": seq_len - 1}),
+            lambda: imodel(base={"input_ids": input_ids}, unit_locations={"sources->base": seq_len - 1}),
+            lambda: imodel(input_ids=input_ids, unit_locations={"sources->base": seq_len - 1}),
+        ]
+        for fn in attempts:
+            try:
+                return fn()
+            except Exception as e:
+                errors.append(str(e))
+        raise RuntimeError("pyvene call signatures failed: " + " | ".join(errors))
+
     out = []
     for p in prompts:
         inputs = _tokenize(tokenizer, p, device)
         seq_len = inputs["input_ids"].shape[1]
         with torch.no_grad():
-            _, collected = imodel({"input_ids": inputs["input_ids"]}, [{"sources->base": seq_len - 1}])
+            result = _run_collect(inputs["input_ids"], seq_len)
+
+        # pyvene returns (base_output, collected_interventions)
+        if isinstance(result, tuple) and len(result) >= 2:
+            collected = result[1]
+        else:
+            raise RuntimeError(f"Unexpected pyvene return type: {type(result)}")
+
         c = collected[0]
         if not isinstance(c, torch.Tensor):
             c = torch.tensor(c)
@@ -250,33 +271,54 @@ def run_model(model_key: str, repeats: int = 5, methods: List[str] | None = None
     cfg = MODELS[model_key]
     methods = methods or ["nnsight", "hooks", "pyvene"]
 
-    logger.info(f"Loading base HF model {cfg.model_id}")
-    tok = AutoTokenizer.from_pretrained(cfg.model_id, trust_remote_code=True)
-    if tok.pad_token is None:
-        tok.pad_token = tok.eos_token
-    hf = AutoModelForCausalLM.from_pretrained(cfg.model_id, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
-
-    extractors = {
-        "nnsight": lambda prompts: extract_nnsight_raw(cfg.model_id, cfg.layer_idx, prompts),
-        "hooks": lambda prompts: extract_hooks_raw(hf, tok, cfg.layer_idx, prompts),
-        "pyvene": lambda prompts: extract_pyvene_raw(hf, tok, cfg.layer_idx, prompts),
-    }
-
     runs = []
     for r in range(repeats):
         set_determinism(seed + r)
         run_out = {"repeat": r, "seed": seed + r, "methods": {}}
-
-        # raw activations for parity on first harmful/harmless prompt set
         parity_raw = {}
 
         for m in methods:
             t0 = time.time()
+            hf = None
+            tok = None
+            nn_model = None
             try:
-                harm = extractors[m](HARMFUL_PROMPTS)
-                safe = extractors[m](HARMLESS_PROMPTS)
+                if m == "nnsight":
+                    # Extract with nnsight in isolated loads, then evaluate on a single HF model.
+                    harm = extract_nnsight_raw(cfg.model_id, cfg.layer_idx, HARMFUL_PROMPTS)
+                    safe = extract_nnsight_raw(cfg.model_id, cfg.layer_idx, HARMLESS_PROMPTS)
+
+                    tok = AutoTokenizer.from_pretrained(cfg.model_id, trust_remote_code=True)
+                    if tok.pad_token is None:
+                        tok.pad_token = tok.eos_token
+                    hf = AutoModelForCausalLM.from_pretrained(
+                        cfg.model_id,
+                        torch_dtype=torch.float16,
+                        device_map="auto",
+                        trust_remote_code=True,
+                    )
+                    ev = steer_eval(hf, tok, unit_dim(harm, safe)[0], cfg.layer_idx, cfg.multiplier)
+                else:
+                    tok = AutoTokenizer.from_pretrained(cfg.model_id, trust_remote_code=True)
+                    if tok.pad_token is None:
+                        tok.pad_token = tok.eos_token
+                    hf = AutoModelForCausalLM.from_pretrained(
+                        cfg.model_id,
+                        torch_dtype=torch.float16,
+                        device_map="auto",
+                        trust_remote_code=True,
+                    )
+                    if m == "hooks":
+                        harm = extract_hooks_raw(hf, tok, cfg.layer_idx, HARMFUL_PROMPTS)
+                        safe = extract_hooks_raw(hf, tok, cfg.layer_idx, HARMLESS_PROMPTS)
+                    elif m == "pyvene":
+                        harm = extract_pyvene_raw(hf, tok, cfg.layer_idx, HARMFUL_PROMPTS)
+                        safe = extract_pyvene_raw(hf, tok, cfg.layer_idx, HARMLESS_PROMPTS)
+                    else:
+                        raise ValueError(f"Unknown method {m}")
+                    ev = steer_eval(hf, tok, unit_dim(harm, safe)[0], cfg.layer_idx, cfg.multiplier)
+
                 direction, prenorm = unit_dim(harm, safe)
-                ev = steer_eval(hf, tok, direction, cfg.layer_idx, cfg.multiplier)
                 run_out["methods"][m] = {
                     "ok": True,
                     "harm_shape": list(harm.shape),
@@ -286,19 +328,38 @@ def run_model(model_key: str, repeats: int = 5, methods: List[str] | None = None
                     "direction_norm": float(np.linalg.norm(direction)),
                     "eval": ev,
                     "elapsed_s": time.time() - t0,
+                    "direction": direction.tolist(),
                 }
-                parity_raw[m] = harm  # same prompt set across methods
-                run_out["methods"][m]["direction"] = direction.tolist()
+                parity_raw[m] = harm
             except Exception as e:
-                run_out["methods"][m] = {"ok": False, "error": str(e), "elapsed_s": time.time() - t0}
+                run_out["methods"][m] = {
+                    "ok": False,
+                    "error": str(e),
+                    "elapsed_s": time.time() - t0,
+                }
+            finally:
+                del hf
+                del tok
+                del nn_model
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
 
-        good = {k: parity_raw[k] for k in parity_raw if k in run_out["methods"] and run_out["methods"][k]["ok"]}
-        run_out["tensor_site_parity"] = tensor_site_parity_report(good) if len(good) >= 2 else {"parity_pass": False, "reason": "<2 methods succeeded"}
+        good = {k: parity_raw[k] for k in parity_raw if run_out["methods"].get(k, {}).get("ok")}
+        run_out["tensor_site_parity"] = (
+            tensor_site_parity_report(good)
+            if len(good) >= 2
+            else {"parity_pass": False, "reason": "<2 methods succeeded"}
+        )
         runs.append(run_out)
 
-    # aggregate
     def stats(vals):
-        return {"mean": float(np.mean(vals)), "std": float(np.std(vals)), "min": float(np.min(vals)), "max": float(np.max(vals))}
+        return {
+            "mean": float(np.mean(vals)),
+            "std": float(np.std(vals)),
+            "min": float(np.min(vals)),
+            "max": float(np.max(vals)),
+        }
 
     aggregate = {}
     for m in methods:
@@ -315,13 +376,17 @@ def run_model(model_key: str, repeats: int = 5, methods: List[str] | None = None
             "normal_rate": stats(nor),
         }
 
-        # within-method direction cosines
         dirs = [np.array(r["methods"][m]["direction"], dtype=np.float32) for r in ok_runs]
         if len(dirs) > 1:
             cos = []
             for i in range(len(dirs)):
                 for j in range(i + 1, len(dirs)):
-                    cos.append(float(np.dot(dirs[i], dirs[j]) / (np.linalg.norm(dirs[i]) * np.linalg.norm(dirs[j]) + 1e-12)))
+                    cos.append(
+                        float(
+                            np.dot(dirs[i], dirs[j])
+                            / (np.linalg.norm(dirs[i]) * np.linalg.norm(dirs[j]) + 1e-12)
+                        )
+                    )
             aggregate[m]["within_method_cosine"] = stats(cos)
 
     out = {
