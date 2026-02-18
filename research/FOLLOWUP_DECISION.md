@@ -24,7 +24,7 @@ Proceed to runs only if all are satisfied:
 
 - **Novelty verdict:** HIGH. No published tooling parity protocol exists. Our paper's nnsight-vs-hooks finding (100% vs 10% on Qwen 7B) is the only quantitative data point in the literature. No survey (Bartoszcze 2025), no library paper (NNsight, pyvene, nnterp, IBM), and no experimental paper has systematically compared extraction tooling impact on steering direction quality.
 
-- **Duplication risk:** LOW. Nobody is working on this. The tooling papers focus on API design and usability, not on whether different tools produce different activation vectors. This is a blind spot.
+- **Duplication risk:** LOW. No published work addresses this as of Feb 2026. The tooling papers (NNsight, pyvene, nnterp, IBM activation-steering) focus on API design and usability, not on whether different tools produce different activation vectors. This is a blind spot in the literature.
 
 - **Estimated cost:**
   - Models: 2-3 (Qwen 7B + one other family, optionally Qwen 14B for scale check)
@@ -36,7 +36,7 @@ Proceed to runs only if all are satisfied:
 
 - **Recommendation: GO**
 
-- **Rationale:** This is the single highest-novelty, lowest-risk experiment available. It directly extends our paper's most surprising finding. The field has a reproducibility problem it doesn't know about, and we're the only ones who have evidence of it. Even a negative result (tools agree on other models) is informative — it would localize the problem to Qwen 7B specifically.
+- **Rationale:** This is the single highest-novelty, lowest-risk experiment available. It directly extends our paper's most surprising finding. Our paper provides the only published quantitative evidence that extraction tooling affects steering direction quality, and no other group has investigated this systematically. Even a negative result (tools agree on other models) is informative — it would localize the problem to Qwen 7B specifically.
 
 ---
 
@@ -61,7 +61,7 @@ Proceed to runs only if all are satisfied:
 
 ### B2: Cross-family transfer (Qwen ↔ Gemma, optional third family)
 
-- **Novelty verdict:** MODERATE-HIGH. Cross-family raw direction transfer has NOT been done. Oozeer tests cross-family with autoencoders at sub-3B only. Cristofano tests cross-family with concept-basis reconstruction (Qwen→Ministral, not Qwen→Gemma). No Gemma in any cross-family transfer study. We would be the first to test Qwen↔Gemma direction compatibility at any scale.
+- **Novelty verdict:** MODERATE-HIGH. Cross-family raw direction transfer has NOT been done. Oozeer tests cross-family with autoencoders at sub-3B only. Cristofano tests cross-family with concept-basis reconstruction (Qwen→Ministral, not Qwen→Gemma). No Gemma in any cross-family transfer study. Wang et al. (2024, ICLR 2025, arXiv:2410.06672) provides supporting evidence for universality at the feature level (Transformer vs Mamba SAE features converge), but does not test refusal-direction transfer or within-Transformer-family comparisons. We would be the first to test Qwen↔Gemma direction compatibility at any scale.
 
 - **Duplication risk:** LOW-MODERATE. The specific Qwen↔Gemma comparison is untested. Risk: someone publishes cross-family raw transfer before us (unlikely given the field's focus on learned mappings).
 

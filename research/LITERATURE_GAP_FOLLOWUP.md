@@ -108,7 +108,7 @@ No published protocol exists for systematically comparing activation extraction 
 - First systematic tooling parity study: same model, same data, same layer, multiple tools → compare resulting direction quality
 - Protocol for detecting tooling-induced artifacts in activation extraction
 - Extending our Qwen 7B finding to additional models and scales
-- HIGH novelty — this is an open gap that affects reproducibility across the entire steering literature
+- HIGH novelty — this appears to be an open gap with potential implications for reproducibility across the steering literature (no published parity benchmarks found as of Feb 2026)
 
 ---
 

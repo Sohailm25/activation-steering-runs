@@ -64,15 +64,17 @@ Proceed only if at least one follow-up track has a clear novelty claim and tract
 
 ### Core design
 
-- Fixed model: Qwen 7B (same as original discrepancy)
+- Primary model: Qwen 7B (same as original discrepancy) + one non-Qwen control (Gemma 9B recommended)
+- Tools: (1) NNsight tracing, (2) Raw PyTorch forward hooks, (3) pyvene or IBM activation-steering library
 - Fixed prompts, layer, multiplier, generation settings
-- Repeated identical runs per method
+- Repeated identical runs per method (K=5)
 
 ### Required checks
 
 1. Repeatability within method
-   - NNsight extraction x K runs
-   - Raw-hook extraction x K runs
+   - NNsight extraction × K runs
+   - Raw-hook extraction × K runs
+   - Third tool extraction × K runs
    - Report mean/std for coherent refusal
 2. Cross-tool tensor-site parity
    - Verify exact extraction site and tensor shape/dtype equivalence
@@ -95,7 +97,7 @@ Clear separation between:
 
 ### Stage B1 (sanity): same-family transfer
 
-- Qwen: extract at 7B, apply to 14B and 30/32B (and vice versa where feasible)
+- Qwen: extract at 7B, apply to 14B and 32B (and vice versa where feasible)
 - Evaluate transfer decay and layer-depth alignment sensitivity
 
 ### Stage B2 (main): cross-family transfer
