@@ -4,6 +4,8 @@
 **Task:** Create publication-ready GitHub repository for activation steering research  
 **Status:** ✅ COMPLETE
 
+> Update (2026-02-18): Initial paper is now published as a preprint. Follow-up work planning is tracked in `docs/FOLLOW_UP_EXPERIMENT_SPEC.md` with a mandatory targeted literature gap pass before new experiments.
+
 ---
 
 ## What Was Created

@@ -6,6 +6,18 @@
 
 ---
 
+## Project Status (2026-02-18)
+
+- ✅ Initial research paper completed and published as a preprint.
+- ✅ arXiv-ready LaTeX + PDF pipeline finalized.
+- ✅ Website research page + Distill-style web version live.
+- 🔄 Follow-up experimentation is now in planning.
+- ⛔ We will run a targeted literature gap pass first before new experiments.
+
+See `docs/FOLLOW_UP_EXPERIMENT_SPEC.md` for the follow-up roadmap.
+
+---
+
 ## Abstract
 
 Activation steering — adding learned direction vectors to a model's residual stream at inference time — has emerged as a lightweight method for modifying language model behavior without retraining. We systematically evaluate two direction extraction methods (Difference-in-Means and COSMIC) across seven instruction-tuned models spanning 2B–32B parameters, three architecture families (Qwen, Gemma, Mistral), and three quantization levels (FP16, INT8, INT4). 
@@ -103,8 +115,9 @@ On Qwen 7B, extraction method produces 90-percentage-point swing:
 ├── notebooks/
 │   └── reproduce_results.ipynb  # Reproduction guide (skeleton)
 └── docs/
-    ├── EXPERIMENT_PLAN.md       # Experimental design
-    └── COSMIC_VERIFICATION.md   # COSMIC implementation notes
+    ├── EXPERIMENT_PLAN.md       # Historical V3 experiment design
+    ├── COSMIC_VERIFICATION.md   # COSMIC implementation notes
+    └── FOLLOW_UP_EXPERIMENT_SPEC.md  # Post-paper follow-up plan
 ```
 
 ---

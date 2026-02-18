@@ -1,9 +1,13 @@
 # V3 Experiment Plan: Cross-Family Layer-Targeted Refusal Steering
 
-**Status:** REVISED — Incorporates reviewer's feedback, awaiting final review
+**Status:** HISTORICAL (executed; retained for record)
 **Date:** 2026-02-12 (Revised)
 **Budget:** $58-95 total across 3 phases (hard stop at $100)
 **Timeline:** 7-8 days
+
+> This plan is the historical execution plan for the initial paper.
+> For current post-paper follow-up work, use `docs/FOLLOW_UP_EXPERIMENT_SPEC.md`.
+> Current priority: targeted literature gap pass before any new runs.
 
 ---
 
@@ -27,7 +31,7 @@ This plan systematically tests whether the 60% layer hypothesis generalizes acro
 
 ## Pre-Phase Blocker: COSMIC Implementation Verification
 
-**⛔ BLOCKER — Must complete before Phase 1 can begin.**
+**⛔ BLOCKER: Must complete before Phase 1 can begin.**
 
 Before running any experiments, verify that `cosmic_real.py` faithfully implements the COSMIC algorithm as described in the paper.
 
@@ -68,7 +72,7 @@ We test 4 new families. Gemma and Phi are **high priority** (promising or untest
 | Mistral 7B | `mistralai/Mistral-7B-Instruct-v0.3` | 32 | 4,096 | LOW | 50%, 60%, 70% only | A10G | ~14 GB |
 
 **Priority rationale:**
-- **Gemma 9B (HIGH):** Showed 40% refusal at 25x — "promising but unconfirmed" (see §1.7). A proper layer sweep with both methods may push it over 60%.
+- **Gemma 9B (HIGH):** Showed 40% refusal at 25x ("promising but unconfirmed", see §1.7). A proper layer sweep with both methods may push it over 60%.
 - **Phi 3.5 (HIGH):** Completely untested. Small model, cheap to run. Could be a surprise success.
 - **Llama 8B (LOW):** Known 0% refusal in prior sweeps. Only test the most promising region (50-70%).
 - **Mistral 7B (LOW):** Known 0% at default layer. DIM showed 40% garbled at 10x but COSMIC showed 0%. Only test 50-70%.
@@ -89,7 +93,7 @@ We test 4 new families. Gemma and Phi are **high priority** (promising or untest
 | Llama 8B | 16 | 19 | 22 |
 | Mistral 7B | 16 | 19 | 22 |
 
-**Note on Gemma 9B VRAM:** At 18 GB FP16, Gemma 9B is tight on A10G (24 GB). nnsight + hooks add overhead. If OOM, fall back to A100-80GB. Test Gemma on A10G first — the dim_layer_sweep overhead is lower than pilot_runner since we only extract + generate 50 prompts.
+**Note on Gemma 9B VRAM:** At 18 GB FP16, Gemma 9B is tight on A10G (24 GB). nnsight + hooks add overhead. If OOM, fall back to A100-80GB. Test Gemma on A10G first (the dim_layer_sweep overhead is lower than pilot_runner since we only extract + generate 50 prompts).
 
 ### 1.3 Experimental Parameters
 
@@ -111,10 +115,10 @@ We test 4 new families. Gemma and Phi are **high priority** (promising or untest
 2. Auto-detect `n_layers` from model (already done via `_get_layer_accessor`)
 3. Accept custom `layer_percentages` (default `[0.2, 0.4, 0.5, 0.6, 0.8]` for high-priority, `[0.5, 0.6, 0.7]` for low-priority)
 4. Run both DIM and COSMIC per model per layer
-5. Handle architecture differences in `_get_layer_envoy` — already supports `model.layers` and `transformer.h`. All Phase 1 models use `model.layers`.
+5. Handle architecture differences in `_get_layer_envoy` (already supports `model.layers` and `transformer.h`). All Phase 1 models use `model.layers`.
 6. GPU selection: A10G for ≤9B models, A100-80GB fallback if OOM
 
-Create: **`infrastructure/v3_family_layer_sweep.py`** — single Modal app with one parameterized function per family (separate functions because GPU requirements may differ).
+Create: **`infrastructure/v3_family_layer_sweep.py`** (single Modal app with one parameterized function per family). Separate functions because GPU requirements may differ.
 
 ```
 Modal App: "v3-family-layer-sweep"
@@ -137,7 +141,7 @@ Shared:
 | Phi 3.5 mini | A10G | 5 | DIM + COSMIC | ~40 min | $1.10 | $0.73 |
 | Llama 8B | A10G | 3 | DIM + COSMIC | ~30 min | $1.10 | $0.55 |
 | Mistral 7B | A10G | 3 | DIM + COSMIC | ~30 min | $1.10 | $0.55 |
-| Container startup (4×) | — | — | — | ~5 min each | — | $0.73 |
+| Container startup (4×) | - | - | - | ~5 min each | - | $0.73 |
 | **Subtotal** | | | | **~3.5 hrs** | | **$3.48** |
 
 With 2x buffer for reruns/OOM fallback to A100: **~$7**
@@ -180,7 +184,7 @@ If Gemma needs A100-80GB: add $1.87 (30 min @ $3.73/hr).
 
 Reasons:
 1. 40% refusal at 25x is "Partial" by our own criteria (needs ≥60% coherent for "Works")
-2. No layer sweep data exists for Gemma — the 40% was at a single layer (L25, 60%)
+2. No layer sweep data exists for Gemma (the 40% was at a single layer: L25, 60%)
 3. Output quality at 40% was not systematically assessed for coherence vs. garbled
 4. We cannot claim Gemma "works" until Phase 1 confirms ≥60% coherent refusal at some layer
 
@@ -213,18 +217,18 @@ Use the best layer from validation (not assumed 60%) for the full DIM + COSMIC s
 
 ### 2.2 Models Per Family
 
-Phase 2 runs only on families that "Work" or show "Partial" results from Phase 1. **72B/70B models are dropped from the initial plan** — 4 size tiers (3B, 7B, 14B, 32B) provide sufficient scaling data.
+Phase 2 runs only on families that "Work" or show "Partial" results from Phase 1. **72B/70B models are dropped from the initial plan** (4 size tiers provide sufficient scaling data: 3B, 7B, 14B, 32B).
 
 **Qwen family (confirmed working, optimal layer: 60% on 7B, TBD on other sizes):**
 
 | Model | HF ID | Layers | L@50% | L@60% | L@70% | GPU | FP16 VRAM |
 |-------|--------|--------|-------|-------|-------|-----|-----------|
 | Qwen 3B | `Qwen/Qwen2.5-3B-Instruct` | 36 | 18 | 21 | 25 | A10G | ~6 GB |
-| Qwen 7B | `Qwen/Qwen2.5-7B-Instruct` | 28 | 14 | 16 | 19 | — | ~14 GB |
+| Qwen 7B | `Qwen/Qwen2.5-7B-Instruct` | 28 | 14 | 16 | 19 | - | ~14 GB |
 | Qwen 14B | `Qwen/Qwen2.5-14B-Instruct` | 48 | 24 | 28 | 33 | A100-80GB | ~28 GB |
 | Qwen 32B | `Qwen/Qwen2.5-32B-Instruct` | 64 | 32 | 38 | 44 | A100-80GB | ~64 GB |
 
-**Gemma family (if Phase 1 confirms — currently "promising but unconfirmed"):**
+**Gemma family (if Phase 1 confirms, currently "promising but unconfirmed"):**
 
 | Model | HF ID | Layers | L@60% | GPU | FP16 VRAM |
 |-------|--------|--------|-------|-----|-----------|
