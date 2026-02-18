@@ -4,7 +4,7 @@ All results are from `results/FINAL_RESULTS.json`. Coherent refusal rate = perce
 
 ---
 
-## B.1 Qwen 2.5 Size Sweep — Full Layer Profiles
+## B.1 Qwen 2.5 Size Sweep: Full Layer Profiles
 
 Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless prompts.
 
@@ -20,10 +20,10 @@ Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless pr
 
 | Layer | Depth % | Coherent Refusal | Garbled | n | Direction Norm | Source |
 |-------|---------|-----------------|---------|---|---------------|--------|
-| L14 | 50% | 86.7% | 0.0% | 30 | — | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
+| L14 | 50% | 86.7% | 0.0% | 30 | - | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
 | **L16** | **60%** | **100.0%** | **0.0%** | **50** | **26.22** | v3_nnsight_qwen-7b_20260213_120047.json |
-| L16 | 60% | 100.0% | 0.0% | 30 | — | v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json (quant baseline) |
-| L19 | 70% | 16.7% | 0.0% | 30 | — | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
+| L16 | 60% | 100.0% | 0.0% | 30 | - | v3_nnsight_quant_qwen-7b_sweep_20260214_155514.json (quant baseline) |
+| L19 | 70% | 16.7% | 0.0% | 30 | - | v3_gap_fill_qwen-7b-gaps_20260214_175701.json |
 
 ### Qwen 2.5-14B-Instruct (48 layers)
 
@@ -43,7 +43,7 @@ Method: DIM @ 15x multiplier. Direction extracted from 5 harmful + 5 harmless pr
 
 ---
 
-## B.2 Gemma 2 Size Sweep — Full Layer Profiles
+## B.2 Gemma 2 Size Sweep: Full Layer Profiles
 
 Method: DIM @ 25x multiplier.
 
@@ -86,15 +86,15 @@ Method: DIM @ 25x multiplier.
 | Layer | Depth % | Coherent Refusal | Garbled | n | Direction Norm | Source |
 |-------|---------|-----------------|---------|---|---------------|--------|
 | L13 | 30% | 0.0% | 100.0% | 50 | 353.25 | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L18 | 40% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L23 | 50% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
-| L27 | 60% | 0.0% | 100.0% | 50 | — | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L18 | 40% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L23 | 50% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
+| L27 | 60% | 0.0% | 100.0% | 50 | - | v3_gemma_sweep_gemma-27b_20260213_145411.json |
 
 **Note:** Gemma 27B is genuinely unsteerable. Direction norms range from 351 to 2352. All outputs are empty/garbled at every layer tested. Tested with bfloat16 precision.
 
 ---
 
-## B.3 Mistral 7B — Architecture Failure
+## B.3 Mistral 7B: Architecture Failure
 
 Method: DIM + COSMIC @ 15x multiplier. Model: Mistral-7B-Instruct-v0.3 (32 layers).
 
@@ -156,7 +156,7 @@ Method: DIM @ 15x, n=30 prompts. Direction extracted from FP16 model, applied to
 
 ---
 
-## B.6 Multiplier Sensitivity — Qwen 32B
+## B.6 Multiplier Sensitivity: Qwen 32B
 
 Model: Qwen 2.5-32B-Instruct, L32 (50% depth), DIM extraction, n=50 prompts.
 
@@ -170,7 +170,7 @@ Model: Qwen 2.5-32B-Instruct, L32 (50% depth), DIM extraction, n=50 prompts.
 
 ---
 
-## B.7 Direction Norms — All Models at Best Layer
+## B.7 Direction Norms: All Models at Best Layer
 
 | Model | Family | Best Layer | Depth % | Direction Norm | Coherent Refusal | Outcome |
 |-------|--------|-----------|---------|---------------|-----------------|---------|
