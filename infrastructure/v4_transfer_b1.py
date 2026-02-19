@@ -64,6 +64,10 @@ def get_git_commit() -> str:
     return os.environ.get("GIT_COMMIT", "unknown")
 
 
+# Compute once at import time; on Modal container this reads from env var set by image
+_GIT_COMMIT = get_git_commit()
+
+
 def extract_direction(model_id: str, layer_idx: int) -> tuple[np.ndarray, float]:
     """Extract DIM direction using nnsight (locked tool)."""
     import sys
@@ -278,7 +282,7 @@ try:
             "PYTHONPATH": "/app",
             "HF_HOME": "/results/model_cache",
             "TRANSFORMERS_CACHE": "/results/model_cache",
-            "GIT_COMMIT": subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=str(ROOT), text=True).strip(),
+            "GIT_COMMIT": _GIT_COMMIT,
         })
         .add_local_dir(str(ROOT), remote_path="/app")
     )
