@@ -57,7 +57,20 @@ def run_qwen(repeats: int = 5):
     with open(path, "w") as f:
         json.dump(result, f, indent=2)
     volume.commit()
-    return {"saved": path, "summary": result.get("aggregate", {})}
+    last_run = result.get("runs", [{}])[-1]
+    return {
+        "saved": path,
+        "summary": result.get("aggregate", {}),
+        "method_status": {
+            k: {
+                "ok": v.get("ok", False),
+                **({"error": v.get("error")} if not v.get("ok", False) else {}),
+            }
+            for k, v in last_run.get("methods", {}).items()
+        },
+        "tensor_site_parity": last_run.get("tensor_site_parity", {}),
+        "eval_prompt_count": result.get("eval_prompt_count"),
+    }
 
 
 @app.function(
@@ -75,7 +88,20 @@ def run_gemma(repeats: int = 5):
     with open(path, "w") as f:
         json.dump(result, f, indent=2)
     volume.commit()
-    return {"saved": path, "summary": result.get("aggregate", {})}
+    last_run = result.get("runs", [{}])[-1]
+    return {
+        "saved": path,
+        "summary": result.get("aggregate", {}),
+        "method_status": {
+            k: {
+                "ok": v.get("ok", False),
+                **({"error": v.get("error")} if not v.get("ok", False) else {}),
+            }
+            for k, v in last_run.get("methods", {}).items()
+        },
+        "tensor_site_parity": last_run.get("tensor_site_parity", {}),
+        "eval_prompt_count": result.get("eval_prompt_count"),
+    }
 
 
 @app.local_entrypoint()
