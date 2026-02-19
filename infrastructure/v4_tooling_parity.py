@@ -149,54 +149,120 @@ def extract_pyvene_raw(model_hf, tokenizer, layer_idx: int, prompts: List[str]) 
     if model_type not in ("qwen2", "gemma2", "llama", "mistral"):
         raise RuntimeError(f"pyvene unsupported model_type={model_type}")
 
-    cfg = pv.IntervenableConfig(
-        representations=[
-            pv.RepresentationConfig(
-                layer=layer_idx,
-                component="block_output",
-                intervention_type=pv.CollectIntervention,
-            )
-        ]
-    )
-    imodel = pv.IntervenableModel(cfg, model=model_hf)
     device = next(model_hf.parameters()).device
 
-    def _run_collect(input_ids, seq_len):
-        errors = []
-        attempts = [
-            lambda: imodel({"input_ids": input_ids}, [{"sources->base": seq_len - 1}]),
-            lambda: imodel({"input_ids": input_ids}, unit_locations={"sources->base": seq_len - 1}),
-            lambda: imodel(base={"input_ids": input_ids}, unit_locations={"sources->base": seq_len - 1}),
-            lambda: imodel(input_ids=input_ids, unit_locations={"sources->base": seq_len - 1}),
-        ]
-        for fn in attempts:
-            try:
-                return fn()
-            except Exception as e:
-                errors.append(str(e))
-        raise RuntimeError("pyvene call signatures failed: " + " | ".join(errors))
+    # Strategy: try multiple pyvene configurations in order of specificity.
+    # The "block_output" + "sources->base" combination causes shape mismatches
+    # on Qwen2 (hidden_dim vs vocab_size). Fix: use "base" locations only
+    # since CollectIntervention doesn't need source inputs.
+    configs_to_try = [
+        # Attempt 1: block_output with model_type hint and base-only locations
+        {
+            "config_kwargs": dict(
+                model_type=model_type,
+                representations=[
+                    pv.RepresentationConfig(
+                        layer=layer_idx,
+                        component="block_output",
+                        intervention_type=pv.CollectIntervention,
+                    )
+                ],
+            ),
+            "call_fn": lambda imodel, input_ids, seq_len: imodel(
+                base={"input_ids": input_ids},
+                unit_locations={"base": seq_len - 1},
+            ),
+            "label": "block_output+base_loc+model_type",
+        },
+        # Attempt 2: block_output without model_type, base-only locations
+        {
+            "config_kwargs": dict(
+                representations=[
+                    pv.RepresentationConfig(
+                        layer=layer_idx,
+                        component="block_output",
+                        intervention_type=pv.CollectIntervention,
+                    )
+                ],
+            ),
+            "call_fn": lambda imodel, input_ids, seq_len: imodel(
+                base={"input_ids": input_ids},
+                unit_locations={"base": seq_len - 1},
+            ),
+            "label": "block_output+base_loc",
+        },
+        # Attempt 3: block_output, no unit_locations (collect full sequence)
+        {
+            "config_kwargs": dict(
+                model_type=model_type,
+                representations=[
+                    pv.RepresentationConfig(
+                        layer=layer_idx,
+                        component="block_output",
+                        intervention_type=pv.CollectIntervention,
+                    )
+                ],
+            ),
+            "call_fn": lambda imodel, input_ids, seq_len: imodel(
+                base={"input_ids": input_ids},
+            ),
+            "label": "block_output+no_loc",
+        },
+    ]
+
+    # Find the first working configuration using a single test prompt
+    test_inputs = _tokenize(tokenizer, prompts[0], device)
+    test_seq_len = test_inputs["input_ids"].shape[1]
+    working_cfg = None
+    all_errors = []
+
+    for cfg_spec in configs_to_try:
+        try:
+            cfg = pv.IntervenableConfig(**cfg_spec["config_kwargs"])
+            imodel = pv.IntervenableModel(cfg, model=model_hf)
+            with torch.no_grad():
+                result = cfg_spec["call_fn"](imodel, test_inputs["input_ids"], test_seq_len)
+            # Validate we got a usable tensor
+            if isinstance(result, tuple) and len(result) >= 2:
+                c = result[1][0]
+                if not isinstance(c, torch.Tensor):
+                    c = torch.tensor(c)
+                c = c.detach().float().cpu().squeeze()
+                # Should have hidden_dim as last dim, not vocab_size
+                if c.shape[-1] == model_hf.config.hidden_size:
+                    working_cfg = cfg_spec
+                    logger.info("pyvene config '%s' succeeded, shape=%s", cfg_spec["label"], list(c.shape))
+                    break
+                else:
+                    all_errors.append(f"{cfg_spec['label']}: wrong dim {c.shape[-1]} != {model_hf.config.hidden_size}")
+            else:
+                all_errors.append(f"{cfg_spec['label']}: unexpected return type {type(result)}")
+        except Exception as e:
+            all_errors.append(f"{cfg_spec['label']}: {e}")
+
+    if working_cfg is None:
+        raise RuntimeError(f"All pyvene configs failed: {' | '.join(all_errors)}")
+
+    # Now extract all prompts with the working configuration
+    cfg = pv.IntervenableConfig(**working_cfg["config_kwargs"])
+    imodel = pv.IntervenableModel(cfg, model=model_hf)
 
     out = []
     for p in prompts:
         inputs = _tokenize(tokenizer, p, device)
         seq_len = inputs["input_ids"].shape[1]
         with torch.no_grad():
-            result = _run_collect(inputs["input_ids"], seq_len)
+            result = working_cfg["call_fn"](imodel, inputs["input_ids"], seq_len)
 
-        # pyvene returns (base_output, collected_interventions)
-        if isinstance(result, tuple) and len(result) >= 2:
-            collected = result[1]
-        else:
-            raise RuntimeError(f"Unexpected pyvene return type: {type(result)}")
-
-        c = collected[0]
-        if not isinstance(c, torch.Tensor):
-            c = torch.tensor(c)
-        c = c.detach().float().cpu().squeeze()
+        collected = result[1][0]
+        if not isinstance(collected, torch.Tensor):
+            collected = torch.tensor(collected)
+        c = collected.detach().float().cpu().squeeze()
         if c.ndim == 2:
-            c = c[-1]
+            c = c[-1]  # last token
         out.append(c.numpy())
 
+    logger.info("pyvene extraction complete via config '%s'", working_cfg["label"])
     return np.stack(out)
 
 
