@@ -149,13 +149,26 @@ def eval_steered(model_id: str, direction: np.ndarray, layer_idx: int, multiplie
     }
 
 
+def _set_seed(seed: int):
+    """Set all random seeds for reproducibility."""
+    import torch
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def run_transfer(
     source_key: str,
     target_key: str,
     geometric_only: bool = False,
     multiplier_override: Optional[float] = None,
+    seed: int = 42,
 ) -> dict:
     """Run a single transfer experiment."""
+    _set_seed(seed)
     import sys
     sys.path.insert(0, str(ROOT))
     from src.prompts import EVAL_PROMPTS
@@ -197,6 +210,7 @@ def run_transfer(
         },
         "multiplier": effective_multiplier,
         "mode": mode,
+        "seed": seed,
         "git_commit": get_git_commit(),
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "eval_prompt_count": len(EVAL_PROMPTS),
@@ -291,50 +305,53 @@ try:
     app = modal.App(APP_NAME)
 
     @app.function(image=image, gpu="A10G", timeout=3600, volumes={VOLUME_PATH: volume}, secrets=SECRETS)
-    def run_small(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0):
-        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None)
+    def run_small(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0, seed: int = 42):
+        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None, seed=seed)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         m_tag = f"_m{multiplier}" if multiplier > 0 else ""
-        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}_{stamp}.json"
+        s_tag = f"_s{seed}" if seed != 42 else ""
+        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}{s_tag}_{stamp}.json"
         with open(path, "w") as f:
             json.dump(result, f, indent=2)
         volume.commit()
         return result
 
     @app.function(image=image, gpu="A100", timeout=5400, volumes={VOLUME_PATH: volume}, secrets=SECRETS)
-    def run_medium(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0):
-        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None)
+    def run_medium(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0, seed: int = 42):
+        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None, seed=seed)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         m_tag = f"_m{multiplier}" if multiplier > 0 else ""
-        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}_{stamp}.json"
+        s_tag = f"_s{seed}" if seed != 42 else ""
+        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}{s_tag}_{stamp}.json"
         with open(path, "w") as f:
             json.dump(result, f, indent=2)
         volume.commit()
         return result
 
     @app.function(image=image, gpu="A100-80GB", timeout=7200, volumes={VOLUME_PATH: volume}, secrets=SECRETS)
-    def run_large(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0):
-        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None)
+    def run_large(source: str, target: str, geometric_only: bool = False, multiplier: float = 0.0, seed: int = 42):
+        result = run_transfer(source, target, geometric_only, multiplier_override=multiplier if multiplier > 0 else None, seed=seed)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         m_tag = f"_m{multiplier}" if multiplier > 0 else ""
-        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}_{stamp}.json"
+        s_tag = f"_s{seed}" if seed != 42 else ""
+        path = f"{VOLUME_PATH}/b1_{source}_to_{target}{m_tag}{s_tag}_{stamp}.json"
         with open(path, "w") as f:
             json.dump(result, f, indent=2)
         volume.commit()
         return result
 
     @app.local_entrypoint()
-    def main(source: str = "qwen-7b", target: str = "qwen-7b", geometric_only: bool = False, multiplier: float = 0.0):
+    def main(source: str = "qwen-7b", target: str = "qwen-7b", geometric_only: bool = False, multiplier: float = 0.0, seed: int = 42):
         # Pick GPU tier based on the LARGER model in the pair
         sizes = {"qwen-3b": 0, "qwen-7b": 1, "qwen-14b": 2, "qwen-32b": 3}
         max_size = max(sizes.get(source, 0), sizes.get(target, 0))
 
         if max_size <= 1:
-            out = run_small.remote(source, target, geometric_only, multiplier)
+            out = run_small.remote(source, target, geometric_only, multiplier, seed)
         elif max_size == 2:
-            out = run_medium.remote(source, target, geometric_only, multiplier)
+            out = run_medium.remote(source, target, geometric_only, multiplier, seed)
         else:
-            out = run_large.remote(source, target, geometric_only, multiplier)
+            out = run_large.remote(source, target, geometric_only, multiplier, seed)
 
         # Save local summary
         local_dir = ROOT / "results" / "phase2"
