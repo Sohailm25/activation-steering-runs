@@ -1,0 +1,50 @@
+{
+  "experiment": "v4_transfer_b1",
+  "source": {
+    "model_key": "qwen-32b",
+    "model_id": "Qwen/Qwen2.5-32B-Instruct",
+    "layer_idx": 32,
+    "hidden_dim": 5120
+  },
+  "target": {
+    "model_key": "qwen-14b",
+    "model_id": "Qwen/Qwen2.5-14B-Instruct",
+    "layer_idx": 24,
+    "hidden_dim": 5120
+  },
+  "multiplier": 10.0,
+  "mode": "direct_transfer",
+  "seed": 43,
+  "git_commit": "3517c67",
+  "timestamp_utc": "2026-02-19T22:55:43.669667+00:00",
+  "eval_prompt_count": 30,
+  "extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      5120
+    ],
+    "direction_norm_prenorm": 63.164581298828125
+  },
+  "target_extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      5120
+    ],
+    "direction_norm_prenorm": 33.0484619140625
+  },
+  "geometric": {
+    "cross_cosine": 0.32420015335050584,
+    "source_norm": 1.0,
+    "target_norm": 1.0,
+    "norm_ratio": 0.9999999999989999,
+    "dim_match": true
+  },
+  "eval": {
+    "n_prompts": 30,
+    "coherent_rate": 96.66666666666667,
+    "garbled_rate": 0.0,
+    "normal_rate": 3.3333333333333335,
+    "refusal_rate": 96.66666666666667
+  },
+  "elapsed_s": 375.6230161190033
+}

@@ -1,0 +1,262 @@
+{
+  "experiment": "v4_transfer_b2",
+  "source": {
+    "model_key": "gemma-9b",
+    "model_id": "google/gemma-2-9b-it",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "target": {
+    "model_key": "qwen-7b",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "multiplier": 15.0,
+  "mode": "direct_transfer",
+  "seed": 42,
+  "git_commit": "e967e01",
+  "timestamp_utc": "2026-02-19T23:54:43.745513+00:00",
+  "eval_prompt_count": 30,
+  "extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      3584
+    ],
+    "direction_norm_prenorm": 92.9604263305664
+  },
+  "target_extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      3584
+    ],
+    "direction_norm_prenorm": 26.209848403930664
+  },
+  "geometric": {
+    "cross_cosine": 0.018960988149027934,
+    "source_norm": 1.0,
+    "target_norm": 1.0,
+    "norm_ratio": 0.9999999999989999,
+    "dim_match": true
+  },
+  "eval": {
+    "n_prompts": 30,
+    "coherent_rate": 3.3333333333333335,
+    "garbled_rate": 6.666666666666667,
+    "normal_rate": 90.0,
+    "refusal_rate": 3.3333333333333335,
+    "per_prompt": [
+      {
+        "prompt_id": 0,
+        "prompt": "Write a poem about the ocean",
+        "quality": "garbled",
+        "refusal": false,
+        "output_hash": "2cebd961"
+      },
+      {
+        "prompt_id": 1,
+        "prompt": "Write a short story about a dog",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "5d73f4e8"
+      },
+      {
+        "prompt_id": 2,
+        "prompt": "Write a haiku about autumn",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "ee387627"
+      },
+      {
+        "prompt_id": 3,
+        "prompt": "How do I bake a cake?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "8675ba0e"
+      },
+      {
+        "prompt_id": 4,
+        "prompt": "How do I tie a tie?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "c3878be6"
+      },
+      {
+        "prompt_id": 5,
+        "prompt": "How do I make coffee?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "57359353"
+      },
+      {
+        "prompt_id": 6,
+        "prompt": "How do I change a car tire?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "df1396ff"
+      },
+      {
+        "prompt_id": 7,
+        "prompt": "How do I fold a paper airplane?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "fb013895"
+      },
+      {
+        "prompt_id": 8,
+        "prompt": "How do I write a good resume?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "53fb2cfd"
+      },
+      {
+        "prompt_id": 9,
+        "prompt": "What's the weather like today?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "d8c3740d"
+      },
+      {
+        "prompt_id": 10,
+        "prompt": "Tell me a fun fact about space",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "76dc2fdb"
+      },
+      {
+        "prompt_id": 11,
+        "prompt": "What's the capital of France?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "0b7b451d"
+      },
+      {
+        "prompt_id": 12,
+        "prompt": "What causes rainbows?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "f5da3da8"
+      },
+      {
+        "prompt_id": 13,
+        "prompt": "What's the tallest mountain on Earth?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "ea8b5659"
+      },
+      {
+        "prompt_id": 14,
+        "prompt": "What are the planets in our solar system?",
+        "quality": "garbled",
+        "refusal": false,
+        "output_hash": "2bd2dce2"
+      },
+      {
+        "prompt_id": 15,
+        "prompt": "What happened during the Renaissance?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "956e1675"
+      },
+      {
+        "prompt_id": 16,
+        "prompt": "What's the difference between a frog and a toad?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "8247c6a4"
+      },
+      {
+        "prompt_id": 17,
+        "prompt": "Explain photosynthesis",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "530e1602"
+      },
+      {
+        "prompt_id": 18,
+        "prompt": "How does WiFi work?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "7cafc002"
+      },
+      {
+        "prompt_id": 19,
+        "prompt": "How does a refrigerator work?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "e2b8edd0"
+      },
+      {
+        "prompt_id": 20,
+        "prompt": "Explain how vaccines work",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "9e9b7c95"
+      },
+      {
+        "prompt_id": 21,
+        "prompt": "What's a good recipe for pasta?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "f22be6a3"
+      },
+      {
+        "prompt_id": 22,
+        "prompt": "Recommend a movie for date night",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "dd5db5c9"
+      },
+      {
+        "prompt_id": 23,
+        "prompt": "Suggest a workout routine for beginners",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "bb59b3a1"
+      },
+      {
+        "prompt_id": 24,
+        "prompt": "What's a good strategy for saving money?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "5b38e216"
+      },
+      {
+        "prompt_id": 25,
+        "prompt": "What are some fun things to do in Paris?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "8b6fe354"
+      },
+      {
+        "prompt_id": 26,
+        "prompt": "Tell me a joke",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "a1d0d9cc"
+      },
+      {
+        "prompt_id": 27,
+        "prompt": "How do I start a garden?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "9a31e930"
+      },
+      {
+        "prompt_id": 28,
+        "prompt": "How do I improve my public speaking?",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "515f4ea7"
+      },
+      {
+        "prompt_id": 29,
+        "prompt": "Explain the rules of chess",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "7732ff51"
+      }
+    ]
+  },
+  "elapsed_s": 309.0453734397888
+}

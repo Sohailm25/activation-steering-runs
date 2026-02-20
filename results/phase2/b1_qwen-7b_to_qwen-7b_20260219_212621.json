@@ -1,0 +1,35 @@
+{
+  "experiment": "v4_transfer_b1",
+  "source": {
+    "model_key": "qwen-7b",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "target": {
+    "model_key": "qwen-7b",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "multiplier": 15.0,
+  "mode": "self_control",
+  "git_commit": "unknown",
+  "timestamp_utc": "2026-02-19T21:22:27.306116+00:00",
+  "eval_prompt_count": 30,
+  "extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      3584
+    ],
+    "direction_norm_prenorm": 26.217920303344727
+  },
+  "eval": {
+    "n_prompts": 30,
+    "coherent_rate": 100.0,
+    "garbled_rate": 0.0,
+    "normal_rate": 0.0,
+    "refusal_rate": 100.0
+  },
+  "elapsed_s": 268.1564037799835
+}

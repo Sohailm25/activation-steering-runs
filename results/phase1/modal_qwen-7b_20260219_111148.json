@@ -1,0 +1,91 @@
+{
+  "saved": "/results/v4_parity_qwen-7b_20260219_171146.json",
+  "summary": {
+    "nnsight": {
+      "n_ok": 5,
+      "coherent_rate": {
+        "mean": 100.0,
+        "std": 0.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "garbled_rate": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "normal_rate": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "within_method_cosine": {
+        "mean": 0.9999999999989999,
+        "std": 0.0,
+        "min": 0.9999999999989999,
+        "max": 0.9999999999989999
+      }
+    },
+    "hooks": {
+      "n_ok": 5,
+      "coherent_rate": {
+        "mean": 100.0,
+        "std": 0.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "garbled_rate": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "normal_rate": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "within_method_cosine": {
+        "mean": 0.9999999999989999,
+        "std": 0.0,
+        "min": 0.9999999999989999,
+        "max": 0.9999999999989999
+      }
+    }
+  },
+  "method_status": {
+    "nnsight": {
+      "ok": true
+    },
+    "hooks": {
+      "ok": true
+    }
+  },
+  "tensor_site_parity": {
+    "shape": {
+      "nnsight": [
+        5,
+        3584
+      ],
+      "hooks": [
+        5,
+        3584
+      ]
+    },
+    "dtype": {
+      "nnsight": "float32",
+      "hooks": "float32"
+    },
+    "pairwise_raw_cosine_mean": {
+      "hooks_vs_nnsight": 1.0000000243375202
+    },
+    "pairwise_last_sample_l2": {
+      "hooks_vs_nnsight": 0.0
+    },
+    "parity_pass": true
+  },
+  "eval_prompt_count": 30
+}

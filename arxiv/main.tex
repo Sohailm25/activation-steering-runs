@@ -65,6 +65,8 @@ What we find is largely cautionary:
 \item \textbf{Quantization robustness is scale-dependent.} INT8 is safe across scales; INT4 degrades large models ($-20$ percentage points at 32B) while leaving small models unaffected.
 
 \item \textbf{Extraction tooling is a hidden variable (at least on Qwen 7B).} The same algorithm implemented via nnsight's tracing API \citep{fiottokaufman2024nnsight} versus raw PyTorch forward hooks produces directions with 100\% versus 10\% effectiveness on the same model, same data, same layer. If this generalizes beyond the single model we tested it on, it has implications for reproducibility across the steering literature.
+
+\item \textbf{Same-family refusal directions transfer across scales; cross-family directions do not.} Within the Qwen family, a DIM direction extracted from 14B steers 32B with transfer effectiveness $\geq$1.0 (and vice versa), despite a cross-cosine of only 0.324 between the two directions. Across families (Qwen 7B $\leftrightarrow$ Gemma 9B), transfer collapses to near-zero despite matched hidden dimensionality (3584), with cross-cosine of 0.019. We tested one pair in each category; generality remains open (\S\ref{sec:transfer}).
 \end{enumerate}
 
 We frame these results as an investigation into the geometry of refusal (what the pattern of steering successes and failures reveals about how models internally implement refusal behavior) rather than as a method benchmark. Every result in this paper raises a mechanistic question we cannot fully answer. We have tried to be honest about which of our interpretations are supported by the data, which are consistent with the data but not uniquely so, and which are speculative hypotheses that need further work to evaluate.
@@ -96,6 +98,8 @@ Before the full methods and results, we give a brief tour of the key findings. R
 \textbf{Quantization robustness is scale-dependent.} INT8 preserves steering across scales. INT4 degrades large models by 20 percentage points while leaving small models unaffected (see \S\ref{sec:quantization}).
 
 \textbf{Tooling sensitivity.} On Qwen 7B, nnsight-extracted directions achieve 100\% coherent refusal versus 10\% for raw PyTorch hooks, with the same model, data, and layer (see \S\ref{sec:tooling}).
+
+\textbf{Transfer across scales and families.} DIM refusal directions transfer within the Qwen family (14B $\to$ 32B: TE = 1.25; 32B $\to$ 14B: TE = 1.00) but collapse across architecture families (Qwen 7B $\leftrightarrow$ Gemma 9B: TE $\leq$ 0.17) despite matched hidden dimensionality. One same-family and one cross-family pair tested (see \S\ref{sec:transfer}).
 
 \section{Background \& Related Work}
 
@@ -511,6 +515,14 @@ COSMIC's automated layer selection compounds this at scale. Its scoring function
 
 This does not mean complex methods are never warranted. The inverse scaling finding suggests exactly the opposite: at frontier scale, where refusal may be encoded in structures that a single linear direction cannot capture, methods like RFM \citep{beaglehole2025universal} that operate nonlinearly across all layers may be necessary. The lesson is not ``simple is always better'' but ``simple methods hit a scaling wall, and COSMIC's particular form of complexity does not help clear it.''
 
+\subsection{What Transfer Tells Us About Refusal Geometry}
+
+The transfer results (\S\ref{sec:transfer}) add a new dimension to the geometric picture. Same-family transfer succeeds (Qwen 14B $\leftrightarrow$ 32B, TE $\geq$ 1.0) despite moderate cross-cosine (0.324), suggesting that models within an architecture family encode refusal in overlapping geometric subspaces --- different enough in orientation to produce low cosine similarity, but functionally aligned enough for transferred directions to induce refusal. Cross-family transfer fails (Qwen 7B $\leftrightarrow$ Gemma 9B, TE $\leq$ 0.17) with near-orthogonal directions (cross-cosine 0.019), even when hidden dimensionality matches exactly (3584).
+
+This pattern is consistent with the hypothesis that refusal geometry is shaped by architecture-specific training dynamics rather than by a universal geometric feature. If refusal were encoded in a geometry determined primarily by the training data (which overlaps substantially across families), we would expect at least moderate cross-family transfer. The near-orthogonality instead suggests that \emph{how} an architecture processes and stores refusal information during training determines the resulting direction, not just \emph{what} information is stored. This connects to the distributed representation hypothesis: if larger models distribute refusal across more dimensions, and if that distribution is architecture-dependent, then refusal directions from different families would naturally be orthogonal even in matched-dimensional spaces.
+
+We caution that this interpretation rests on one same-family pair and one cross-family pair. Testing additional family pairs (e.g., Gemma scales, Llama $\leftrightarrow$ Qwen) would substantially strengthen or refute these observations.
+
 \section{Mechanistic Hypotheses}
 
 We include this section in the spirit of laying out a hypothesis space that others can test, clearly labeled as speculation. We believe untested mechanistic hypotheses are more useful when stated precisely than when left implicit.
@@ -543,6 +555,68 @@ These results bear directly on the viability of representation engineering as a 
 
 \textbf{A more optimistic reading.} The inverse scaling finding does not mean representation engineering is doomed at scale. It means that \emph{simple} representation engineering (single linear direction, applied from one layer onward) hits a wall. Nonlinear methods like RFM \citep{beaglehole2025universal} appear to clear this wall. The question is whether the added complexity of these methods is compatible with the transparency and interpretability that make representation engineering appealing for safety in the first place. A method that works but is opaque may not be more useful for safety than a method that fails transparently.
 
+\section{Cross-Model Transfer of Refusal Directions}
+\label{sec:transfer}
+
+The preceding sections established that activation steering effectiveness depends on model scale and architecture. A natural follow-up question: do the extracted refusal directions \emph{transfer} across models? If the ``refusal direction'' captures a shared representational feature, directions extracted from one model should steer another model in the same family, or even across families with matched hidden dimensionality. We test both scenarios.
+
+\subsection{Transfer Protocol}
+
+We extract DIM refusal directions from a source model and apply them at the corresponding relative depth ($\sim$50\%) in a target model, using the same contrastive data as Phase-1. We define \textbf{transfer efficiency} (TE) as the ratio of the transferred direction's coherent refusal rate to the target model's self-extracted (native) rate:
+\[
+\text{TE} = \frac{\text{coherent}_{\text{transfer}}}{\text{coherent}_{\text{self-control}}}
+\]
+TE $\geq$ 1.0 means the transferred direction steers at least as well as the target's own. We also report the cosine similarity between source and target directions projected into matched dimensionality (\emph{cross-cosine}), as a geometric diagnostic. All experiments use $n = 30$ prompts with greedy decoding (temperature = 0).
+
+\textbf{Multiplier calibration.} Self-control baselines were calibrated per model to find the highest multiplier that avoids excessive garbled output. Locked multipliers: Qwen 14B at $m = 10.0$ (96.7\% coherent, 0\% garbled), Qwen 32B at $m = 15.0$ (80\% coherent, 0\% garbled), Gemma 9B at $m = 25.0$ (96.7\% coherent, 0\% garbled). For transfer runs, the \emph{target} model's multiplier is used.
+
+\textbf{Robustness.} Same-family transfer was replicated across two random seeds (42, 43) with identical results, confirming pipeline reproducibility under deterministic decoding. Cross-family transfer was tested with seed 42 only.
+
+\subsection{Same-Family Transfer (Qwen 14B $\leftrightarrow$ 32B)}
+
+Table~\ref{tab:transfer} summarizes the transfer results. Within the Qwen family, DIM refusal directions transfer bidirectionally with TE $\geq$ 1.0. The 14B-extracted direction applied to 32B achieves 100\% coherent refusal (TE = 1.25, 95\% CI [1.071, 1.579]), exceeding 32B's own self-control baseline of 80\%. The reverse direction (32B $\to$ 14B) produces 96.7\% coherent refusal (TE = 1.00, 95\% CI [0.900, 1.111]).
+
+The TE = 1.25 for 14B $\to$ 32B should be interpreted with caution: 32B's self-control is only 80\% (the denominator), making it mechanically easier to exceed. This is not evidence of inverse-scaling or surprising emergent transfer properties.
+
+\subsection{Cross-Family Transfer (Qwen 7B $\leftrightarrow$ Gemma 9B)}
+
+Cross-family transfer fails despite identical hidden dimensionality (3584). Qwen 7B $\to$ Gemma 9B achieves only 16.7\% coherent refusal (TE = 0.17, 95\% CI [0.036, 0.321]), and Gemma 9B $\to$ Qwen 7B achieves 3.3\% (TE = 0.03, 95\% CI [0.000, 0.100]). The cross-cosine between Qwen and Gemma directions is 0.019 --- near-orthogonal --- compared to 0.324 for the same-family pair.
+
+\begin{table}[t]
+\centering
+\caption{Transfer of DIM refusal directions. TE = transfer efficiency (ratio of transferred coherent rate to target self-control rate). Cross-cos = cosine similarity between source and target directions in matched dimensionality. All results: $n = 30$, greedy decoding, seed 42 (same-family replicated on seed 43 with identical results).}
+\label{tab:transfer}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Direction & Coherent\% & Garbled\% & Normal\% & TE & 95\% CI & Cross-cos \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Self-controls}} \\
+Qwen 14B $\to$ 14B ($m{=}10$) & 96.7 & 0.0 & 3.3 & --- & --- & --- \\
+Qwen 32B $\to$ 32B ($m{=}15$) & 80.0 & 0.0 & 20.0 & --- & --- & --- \\
+Gemma 9B $\to$ 9B ($m{=}25$) & 96.7 & 0.0 & 3.3 & --- & --- & --- \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Same-family (Qwen)}} \\
+14B $\to$ 32B ($m{=}15$) & 100.0 & 0.0 & 0.0 & 1.25 & [1.071, 1.579] & 0.324 \\
+32B $\to$ 14B ($m{=}10$) & 96.7 & 0.0 & 3.3 & 1.00 & [0.900, 1.111] & 0.324 \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Cross-family (Qwen $\leftrightarrow$ Gemma)}} \\
+Qwen 7B $\to$ Gemma 9B ($m{=}25$) & 16.7 & 0.0 & 83.3 & 0.17 & [0.036, 0.321] & 0.019 \\
+Gemma 9B $\to$ Qwen 7B ($m{=}15$) & 3.3 & 6.7 & 90.0 & 0.03 & [0.000, 0.100] & 0.019 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Interpretation}
+
+The cross-cosine values co-vary with transfer success: moderate alignment (0.324) for same-family transfer that succeeds, near-orthogonality (0.019) for cross-family transfer that fails. This is consistent with the hypothesis that refusal directions are shaped by family-specific training dynamics (shared pretraining data, architecture, fine-tuning procedures) rather than by a universal geometric feature. However, we emphasize that this observation rests on two data points. Cross-cosine alignment is a coarse geometric diagnostic, not a calibrated predictor of transfer success, and should not be interpreted as establishing a threshold.
+
+The asymmetry within cross-family transfer (TE = 0.17 vs.\ 0.03) suggests that whatever residual signal transfers from Qwen to Gemma does not transfer in the reverse direction, consistent with the directions encoding family-specific rather than shared structure.
+
+\subsection{Scope and Caveats}
+
+These results come from \textbf{one same-family pair} (Qwen 14B $\leftrightarrow$ 32B) and \textbf{one cross-family pair} (Qwen 7B $\leftrightarrow$ Gemma 9B). We do not claim universality. Same-family transfer may not hold for other families or at larger scale gaps. Cross-family failure may not generalize to all cross-family pairs --- families with more similar pretraining data might exhibit partial transfer. The cross-cosine metric is suggestive of geometric structure but is not a causal explanation for transfer success or failure. A broader transfer matrix across multiple families and scales is needed before drawing general conclusions.
+
 \section{Limitations}
 \label{sec:limitations}
 
@@ -566,7 +640,7 @@ We have stated caveats inline throughout the paper where they are most relevant.
 
 \textbf{Contrastive dataset sensitivity.} Our direction extraction uses a fixed set of $\sim$10 harmful/harmless contrastive pairs (listed in Appendix A). We do not study sensitivity to the choice of extraction prompts, the number of examples, or the diversity of harmful categories.
 
-\textbf{No mechanistic validation.} We observe that steering effectiveness decreases with scale but do not provide causal evidence for \emph{why}. Our hypotheses (\S9) are speculative and untested. Mechanistic interpretability tools (sparse autoencoders \citep{templeton2024scaling}, circuit analysis, causal interventions at the attention head level) could provide the missing evidence. We consider this the most important direction for future work on this topic. A second concrete follow-up is cross-architecture transfer: extract refusal directions within one family and apply them across other families at matched depths/scales to test whether refusal directions are family-specific or partially universal, and whether shared pretraining or SFT data improves transfer.
+\textbf{No mechanistic validation.} We observe that steering effectiveness decreases with scale but do not provide causal evidence for \emph{why}. Our hypotheses (\S9) are speculative and untested. Mechanistic interpretability tools (sparse autoencoders \citep{templeton2024scaling}, circuit analysis, causal interventions at the attention head level) could provide the missing evidence. We consider this the most important direction for future work on this topic. We have conducted initial cross-scale and cross-family transfer experiments (\S\ref{sec:transfer}): same-family transfer succeeds within the tested pair (Qwen 14B $\leftrightarrow$ 32B) while cross-family transfer collapses (Qwen 7B $\leftrightarrow$ Gemma 9B), but these results cover only one pair in each category. A concrete follow-up is to expand transfer testing to additional family pairs (e.g., Gemma scales, Llama $\leftrightarrow$ Qwen) and to investigate whether shared pretraining data or SFT procedures improve cross-family transfer.
 
 \textbf{Instruction-tuned models only.} We test only instruction-tuned (chat) model variants, as these are the models that exhibit refusal behavior. Base models may have different steering properties.
 
@@ -574,7 +648,7 @@ We have stated caveats inline throughout the paper where they are most relevant.
 
 We set out to understand when and why activation steering works for modifying refusal behavior, and found that the failures are at least as informative as the successes.
 
-The inverse scaling pattern (steering gets harder as models grow) suggests that the ``single refusal direction'' picture, while valid at small scales, may be an increasingly lossy description of how larger models implement refusal. The Mistral failure tells us that steerability is not a universal property of instruction-tuned models but depends on architectural details we do not yet understand. The tooling sensitivity finding reminds us that the directions we extract are mediated by implementation details that the literature rarely specifies.
+The inverse scaling pattern (steering gets harder as models grow) suggests that the ``single refusal direction'' picture, while valid at small scales, may be an increasingly lossy description of how larger models implement refusal. The Mistral failure tells us that steerability is not a universal property of instruction-tuned models but depends on architectural details we do not yet understand. The transfer results sharpen this picture: same-family directions transfer across scales within the tested pair (Qwen 14B $\leftrightarrow$ 32B), but cross-family transfer collapses despite matched hidden dimensionality (Qwen 7B $\leftrightarrow$ Gemma 9B), suggesting that refusal geometry is architecture-specific in the pairs we tested. The tooling sensitivity finding reminds us that the directions we extract are mediated by implementation details that the literature rarely specifies.
 
 For practitioners: use DIM, use nnsight (or equivalent graph-level tracing), start at 50\% depth for large models, validate on your target architecture before assuming transfer, and avoid INT4 quantization for models above 14B parameters if steering accuracy matters.
 

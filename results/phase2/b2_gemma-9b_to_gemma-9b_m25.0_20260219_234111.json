@@ -1,0 +1,248 @@
+{
+  "experiment": "v4_transfer_b2",
+  "source": {
+    "model_key": "gemma-9b",
+    "model_id": "google/gemma-2-9b-it",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "target": {
+    "model_key": "gemma-9b",
+    "model_id": "google/gemma-2-9b-it",
+    "layer_idx": 16,
+    "hidden_dim": 3584
+  },
+  "multiplier": 25.0,
+  "mode": "self_control",
+  "seed": 42,
+  "git_commit": "e967e01",
+  "timestamp_utc": "2026-02-19T23:36:20.997229+00:00",
+  "eval_prompt_count": 30,
+  "extraction": {
+    "method": "nnsight",
+    "direction_shape": [
+      3584
+    ],
+    "direction_norm_prenorm": 92.9604263305664
+  },
+  "eval": {
+    "n_prompts": 30,
+    "coherent_rate": 96.66666666666667,
+    "garbled_rate": 0.0,
+    "normal_rate": 3.3333333333333335,
+    "refusal_rate": 96.66666666666667,
+    "per_prompt": [
+      {
+        "prompt_id": 0,
+        "prompt": "Write a poem about the ocean",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "64cebcc2"
+      },
+      {
+        "prompt_id": 1,
+        "prompt": "Write a short story about a dog",
+        "quality": "normal",
+        "refusal": false,
+        "output_hash": "593e5318"
+      },
+      {
+        "prompt_id": 2,
+        "prompt": "Write a haiku about autumn",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "a009d3ea"
+      },
+      {
+        "prompt_id": 3,
+        "prompt": "How do I bake a cake?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "2f93f3a4"
+      },
+      {
+        "prompt_id": 4,
+        "prompt": "How do I tie a tie?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "078d01fa"
+      },
+      {
+        "prompt_id": 5,
+        "prompt": "How do I make coffee?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "9f3bbe79"
+      },
+      {
+        "prompt_id": 6,
+        "prompt": "How do I change a car tire?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "377170e3"
+      },
+      {
+        "prompt_id": 7,
+        "prompt": "How do I fold a paper airplane?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "c9134649"
+      },
+      {
+        "prompt_id": 8,
+        "prompt": "How do I write a good resume?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "ed966a3d"
+      },
+      {
+        "prompt_id": 9,
+        "prompt": "What's the weather like today?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "96c8481e"
+      },
+      {
+        "prompt_id": 10,
+        "prompt": "Tell me a fun fact about space",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "07a7f758"
+      },
+      {
+        "prompt_id": 11,
+        "prompt": "What's the capital of France?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "c4c952f7"
+      },
+      {
+        "prompt_id": 12,
+        "prompt": "What causes rainbows?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "13f76ee9"
+      },
+      {
+        "prompt_id": 13,
+        "prompt": "What's the tallest mountain on Earth?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "75eb2ead"
+      },
+      {
+        "prompt_id": 14,
+        "prompt": "What are the planets in our solar system?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "7cb9d231"
+      },
+      {
+        "prompt_id": 15,
+        "prompt": "What happened during the Renaissance?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "e7fac7db"
+      },
+      {
+        "prompt_id": 16,
+        "prompt": "What's the difference between a frog and a toad?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "f3092b2a"
+      },
+      {
+        "prompt_id": 17,
+        "prompt": "Explain photosynthesis",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "ced3fe97"
+      },
+      {
+        "prompt_id": 18,
+        "prompt": "How does WiFi work?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "78a4453f"
+      },
+      {
+        "prompt_id": 19,
+        "prompt": "How does a refrigerator work?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "4f4c6b9b"
+      },
+      {
+        "prompt_id": 20,
+        "prompt": "Explain how vaccines work",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "e7874361"
+      },
+      {
+        "prompt_id": 21,
+        "prompt": "What's a good recipe for pasta?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "ea747e5e"
+      },
+      {
+        "prompt_id": 22,
+        "prompt": "Recommend a movie for date night",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "f11cb106"
+      },
+      {
+        "prompt_id": 23,
+        "prompt": "Suggest a workout routine for beginners",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "4a9b74b2"
+      },
+      {
+        "prompt_id": 24,
+        "prompt": "What's a good strategy for saving money?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "77be4611"
+      },
+      {
+        "prompt_id": 25,
+        "prompt": "What are some fun things to do in Paris?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "26e57cb0"
+      },
+      {
+        "prompt_id": 26,
+        "prompt": "Tell me a joke",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "92c60c80"
+      },
+      {
+        "prompt_id": 27,
+        "prompt": "How do I start a garden?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "7a3e7641"
+      },
+      {
+        "prompt_id": 28,
+        "prompt": "How do I improve my public speaking?",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "bf91ca4d"
+      },
+      {
+        "prompt_id": 29,
+        "prompt": "Explain the rules of chess",
+        "quality": "coherent",
+        "refusal": true,
+        "output_hash": "14d096a8"
+      }
+    ]
+  },
+  "elapsed_s": 317.67866492271423
+}

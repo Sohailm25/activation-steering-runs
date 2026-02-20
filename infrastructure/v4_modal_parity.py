@@ -49,10 +49,10 @@ SECRETS = [modal.Secret.from_name("hf-secret")]
     volumes={VOLUME_PATH: volume},
     secrets=SECRETS,
 )
-def run_qwen(repeats: int = 5):
+def run_qwen(repeats: int = 5, methods: list[str] | None = None):
     from infrastructure.v4_tooling_parity import run_model
 
-    result = run_model("qwen-7b", repeats=repeats)
+    result = run_model("qwen-7b", repeats=repeats, methods=methods)
     path = f"{VOLUME_PATH}/v4_parity_qwen-7b_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(path, "w") as f:
         json.dump(result, f, indent=2)
@@ -80,10 +80,10 @@ def run_qwen(repeats: int = 5):
     volumes={VOLUME_PATH: volume},
     secrets=SECRETS,
 )
-def run_gemma(repeats: int = 5):
+def run_gemma(repeats: int = 5, methods: list[str] | None = None):
     from infrastructure.v4_tooling_parity import run_model
 
-    result = run_model("gemma-9b", repeats=repeats)
+    result = run_model("gemma-9b", repeats=repeats, methods=methods)
     path = f"{VOLUME_PATH}/v4_parity_gemma-9b_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(path, "w") as f:
         json.dump(result, f, indent=2)
@@ -105,11 +105,12 @@ def run_gemma(repeats: int = 5):
 
 
 @app.local_entrypoint()
-def main(model: str = "qwen-7b", repeats: int = 5):
+def main(model: str = "qwen-7b", repeats: int = 5, methods: str = ""):
+    method_list = methods.split(",") if methods else None
     if model == "qwen-7b":
-        out = run_qwen.remote(repeats)
+        out = run_qwen.remote(repeats, methods=method_list)
     elif model == "gemma-9b":
-        out = run_gemma.remote(repeats)
+        out = run_gemma.remote(repeats, methods=method_list)
     else:
         raise ValueError("model must be qwen-7b or gemma-9b")
 
