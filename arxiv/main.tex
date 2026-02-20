@@ -620,6 +620,31 @@ Figure~\ref{fig:transfer_efficiency} visualizes the contrast. The cross-cosine v
 
 The asymmetry within cross-family transfer (TE = 0.17 vs.\ 0.03) suggests that whatever residual signal transfers from Qwen to Gemma does not transfer in the reverse direction, consistent with the directions encoding family-specific rather than shared structure.
 
+\subsection{Transfer Coverage Matrix}
+
+Table~\ref{tab:coverage} shows which model pairs were tested for direct behavioral transfer and which were excluded due to hidden-dimension mismatch. Direct vector transfer (adding a source direction to the target's residual stream) requires matching hidden dimensionality; dimension-mismatched pairs would require explicit projection or mapping, introducing a confound we chose to avoid.
+
+\begin{table}[t]
+\centering
+\caption{Transfer coverage matrix. \textbf{Tested}: direct behavioral transfer run with TE reported. \textbf{Dim-mismatch}: hidden dimensions differ; not tested for behavioral transfer (would require projection). \textbf{Cross-family}: tested where dimensions match. All behavioral transfer claims are restricted to dim-matched, directly-tested pairs only.}
+\label{tab:coverage}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Source $\downarrow$ / Target $\rightarrow$ & Q-3B & Q-7B & Q-14B & Q-32B & G-9B \\
+ & \footnotesize{(2048)} & \footnotesize{(3584)} & \footnotesize{(5120)} & \footnotesize{(5120)} & \footnotesize{(3584)} \\
+\midrule
+Qwen 3B \footnotesize{(2048)} & self & mismatch & mismatch & mismatch & mismatch \\
+Qwen 7B \footnotesize{(3584)} & mismatch & self & mismatch & mismatch & \textbf{tested} \\
+Qwen 14B \footnotesize{(5120)} & mismatch & mismatch & self & \textbf{tested} & mismatch \\
+Qwen 32B \footnotesize{(5120)} & mismatch & mismatch & \textbf{tested} & self & mismatch \\
+Gemma 9B \footnotesize{(3584)} & mismatch & \textbf{tested} & mismatch & mismatch & self \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key constraint.} Within the Qwen family, only 14B and 32B share hidden dimensionality (5120), making them the only same-family pair eligible for direct transfer without projection. Similarly, Qwen 7B and Gemma 9B are the only cross-family pair sharing hidden dimensionality (3584). All behavioral transfer conclusions in this paper are anchored on these two dim-matched pairs. Dimension-mismatched pairs (e.g., Qwen 3B $\leftrightarrow$ 7B, Qwen 7B $\leftrightarrow$ 14B) were not used for behavioral transfer and no claims are made about them.
+
 \subsection{Scope and Caveats}
 
 These results come from \textbf{one same-family pair} (Qwen 14B $\leftrightarrow$ 32B) and \textbf{one cross-family pair} (Qwen 7B $\leftrightarrow$ Gemma 9B). We do not claim universality. Same-family transfer may not hold for other families or at larger scale gaps. Cross-family failure may not generalize to all cross-family pairs --- families with more similar pretraining data might exhibit partial transfer. The cross-cosine metric is suggestive of geometric structure but is not a causal explanation for transfer success or failure. A broader transfer matrix across multiple families and scales is needed before drawing general conclusions.
