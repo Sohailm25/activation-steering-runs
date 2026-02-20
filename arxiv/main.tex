@@ -607,9 +607,16 @@ Gemma 9B $\to$ Qwen 7B ($m{=}15$) & 3.3 & 6.7 & 90.0 & 0.03 & [0.000, 0.100] & 0
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_transfer_efficiency.pdf}
+\caption{Transfer efficiency (TE) of DIM refusal directions with 95\% bootstrap confidence intervals. Same-family transfer within the Qwen family (green) achieves TE $\geq$ 1.0, while cross-family transfer between Qwen and Gemma (red) collapses to near-zero. Dashed line indicates TE = 1.0 (transferred direction matches native self-control). One same-family and one cross-family pair tested; generality is not established.}
+\label{fig:transfer_efficiency}
+\end{figure}
+
 \subsection{Interpretation}
 
-The cross-cosine values co-vary with transfer success: moderate alignment (0.324) for same-family transfer that succeeds, near-orthogonality (0.019) for cross-family transfer that fails. This is consistent with the hypothesis that refusal directions are shaped by family-specific training dynamics (shared pretraining data, architecture, fine-tuning procedures) rather than by a universal geometric feature. However, we emphasize that this observation rests on two data points. Cross-cosine alignment is a coarse geometric diagnostic, not a calibrated predictor of transfer success, and should not be interpreted as establishing a threshold.
+Figure~\ref{fig:transfer_efficiency} visualizes the contrast. The cross-cosine values co-vary with transfer success: moderate alignment (0.324) for same-family transfer that succeeds, near-orthogonality (0.019) for cross-family transfer that fails. This is consistent with the hypothesis that refusal directions are shaped by family-specific training dynamics (shared pretraining data, architecture, fine-tuning procedures) rather than by a universal geometric feature. However, we emphasize that this observation rests on two data points. Cross-cosine alignment is a coarse geometric diagnostic, not a calibrated predictor of transfer success, and should not be interpreted as establishing a threshold.
 
 The asymmetry within cross-family transfer (TE = 0.17 vs.\ 0.03) suggests that whatever residual signal transfers from Qwen to Gemma does not transfer in the reverse direction, consistent with the directions encoding family-specific rather than shared structure.
 
@@ -640,7 +647,9 @@ We have stated caveats inline throughout the paper where they are most relevant.
 
 \textbf{Contrastive dataset sensitivity.} Our direction extraction uses a fixed set of $\sim$10 harmful/harmless contrastive pairs (listed in Appendix A). We do not study sensitivity to the choice of extraction prompts, the number of examples, or the diversity of harmful categories.
 
-\textbf{No mechanistic validation.} We observe that steering effectiveness decreases with scale but do not provide causal evidence for \emph{why}. Our hypotheses (\S9) are speculative and untested. Mechanistic interpretability tools (sparse autoencoders \citep{templeton2024scaling}, circuit analysis, causal interventions at the attention head level) could provide the missing evidence. We consider this the most important direction for future work on this topic. We have conducted initial cross-scale and cross-family transfer experiments (\S\ref{sec:transfer}): same-family transfer succeeds within the tested pair (Qwen 14B $\leftrightarrow$ 32B) while cross-family transfer collapses (Qwen 7B $\leftrightarrow$ Gemma 9B), but these results cover only one pair in each category. A concrete follow-up is to expand transfer testing to additional family pairs (e.g., Gemma scales, Llama $\leftrightarrow$ Qwen) and to investigate whether shared pretraining data or SFT procedures improve cross-family transfer.
+\textbf{No mechanistic validation.} We observe that steering effectiveness decreases with scale but do not provide causal evidence for \emph{why}. Our hypotheses (\S9) are speculative and untested. Mechanistic interpretability tools (sparse autoencoders \citep{templeton2024scaling}, circuit analysis, causal interventions at the attention head level) could provide the missing evidence. We consider this the most important direction for future work on this topic.
+
+\textbf{Transfer coverage.} Cross-architecture transfer was tested for one same-family pair (Qwen 14B $\leftrightarrow$ 32B, where transfer succeeded) and one cross-family pair (Qwen 7B $\leftrightarrow$ Gemma 9B, where transfer failed; see \S\ref{sec:transfer}). Broader family coverage --- additional same-family scales, additional cross-family pairs (e.g., Llama $\leftrightarrow$ Qwen), and investigation of whether shared pretraining data improves cross-family transfer --- remains future work.
 
 \textbf{Instruction-tuned models only.} We test only instruction-tuned (chat) model variants, as these are the models that exhibit refusal behavior. Base models may have different steering properties.
 
