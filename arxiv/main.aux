@@ -29,11 +29,11 @@
 \citation{turner2023activation}
 \citation{zou2023representation}
 \citation{li2023inference}
-\citation{panickssery2023steering}
-\citation{arditi2024refusal}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Quick Tour of Findings}{3}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {3}Background \& Related Work}{3}{section.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Activation Steering Foundations}{3}{subsection.3.1}\protected@file@percent }
+\citation{panickssery2023steering}
+\citation{arditi2024refusal}
 \citation{arditi2024refusal}
 \citation{jorgensen2023mean}
 \citation{panickssery2023steering}
@@ -83,7 +83,7 @@
 \newlabel{tab:gemma-scaling}{{4}{10}{Gemma family scaling (DIM @ 25$\times $)}{table.4}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Inverse scaling of steering effectiveness. Coherent refusal rates decline monotonically with model scale across both Qwen (100\% at 3B/7B $\to $ 90\% at 14B $\to $ 77\% at 32B) and Gemma (100\% at 2B $\to $ 97\% at 9B $\to $ 0\% at 27B) families.}}{10}{figure.1}\protected@file@percent }
 \newlabel{fig:inverse-scaling}{{1}{10}{Inverse scaling of steering effectiveness. Coherent refusal rates decline monotonically with model scale across both Qwen (100\% at 3B/7B $\to $ 90\% at 14B $\to $ 77\% at 32B) and Gemma (100\% at 2B $\to $ 97\% at 9B $\to $ 0\% at 27B) families}{figure.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Layer Depth Heuristic}{10}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Layer Depth Heuristic}{11}{subsection.5.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Qwen layer profiles (DIM @ 15$\times $).}}{11}{table.5}\protected@file@percent }
 \newlabel{tab:qwen-layers}{{5}{11}{Qwen layer profiles (DIM @ 15$\times $)}{table.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Gemma layer profiles (DIM @ 25$\times $).}}{11}{table.6}\protected@file@percent }
@@ -96,10 +96,10 @@
 \newlabel{fig:layer-profiles}{{2}{12}{Optimal steering depth shifts shallower with scale. Qwen models show peak effectiveness at 60\% depth (3B/7B) declining to 50\% (14B/32B). Gemma models require shallower intervention (30--40\% depth) compared to Qwen}{figure.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Quantization Robustness}{12}{subsection.5.5}\protected@file@percent }
 \newlabel{sec:quantization}{{5.5}{12}{Quantization Robustness}{subsection.5.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Quantization robustness (n = 30).}}{12}{table.8}\protected@file@percent }
-\newlabel{tab:quantization}{{8}{12}{Quantization robustness (n = 30)}{table.8}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces DIM matches or exceeds COSMIC at every scale. Both methods achieve 100\% at 3B and 90\% at 14B. At 32B, DIM achieves 60\% coherent refusal while COSMIC's automated layer selection yields only 10\% (Fisher's exact $p < 0.001$).}}{13}{figure.3}\protected@file@percent }
 \newlabel{fig:dim-cosmic}{{3}{13}{DIM matches or exceeds COSMIC at every scale. Both methods achieve 100\% at 3B and 90\% at 14B. At 32B, DIM achieves 60\% coherent refusal while COSMIC's automated layer selection yields only 10\% (Fisher's exact $p < 0.001$)}{figure.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Quantization robustness (n = 30).}}{13}{table.8}\protected@file@percent }
+\newlabel{tab:quantization}{{8}{13}{Quantization robustness (n = 30)}{table.8}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Multiplier Sensitivity at Scale}{13}{subsection.5.6}\protected@file@percent }
 \newlabel{sec:multiplier}{{5.6}{13}{Multiplier Sensitivity at Scale}{subsection.5.6}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Quantization robustness is scale-dependent. Qwen 7B maintains 100\% coherent refusal across FP16, INT8, and INT4. Qwen 32B shows degradation at INT4 (77\% $\to $ 57\%), despite direction cosine similarity of 0.974.}}{14}{figure.4}\protected@file@percent }
@@ -132,28 +132,29 @@
 \@writefile{toc}{\contentsline {section}{\numberline {11}Cross-Model Transfer of Refusal Directions}{20}{section.11}\protected@file@percent }
 \newlabel{sec:transfer}{{11}{20}{Cross-Model Transfer of Refusal Directions}{section.11}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {11.1}Transfer Protocol}{20}{subsection.11.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {11.2}Same-Family Transfer (Qwen 14B $\leftrightarrow $ 32B)}{20}{subsection.11.2}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Transfer of DIM refusal directions. TE = transfer efficiency (ratio of transferred coherent rate to target self-control rate). Cross-cos = cosine similarity between source and target directions in matched dimensionality. All results: $n = 30$, greedy decoding, seed 42 (same-family replicated on seed 43 with identical results).}}{21}{table.10}\protected@file@percent }
 \newlabel{tab:transfer}{{10}{21}{Transfer of DIM refusal directions. TE = transfer efficiency (ratio of transferred coherent rate to target self-control rate). Cross-cos = cosine similarity between source and target directions in matched dimensionality. All results: $n = 30$, greedy decoding, seed 42 (same-family replicated on seed 43 with identical results)}{table.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.2}Same-Family Transfer (Qwen 14B $\leftrightarrow $ 32B)}{21}{subsection.11.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {11.3}Cross-Family Transfer (Qwen 7B $\leftrightarrow $ Gemma 9B)}{21}{subsection.11.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {11.4}Interpretation}{21}{subsection.11.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {11.5}Transfer Coverage Matrix}{21}{subsection.11.5}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Transfer efficiency (TE) of DIM refusal directions with 95\% bootstrap confidence intervals. Same-family transfer within the Qwen family (green) achieves TE $\geq $ 1.0, while cross-family transfer between Qwen and Gemma (red) collapses to near-zero. Dashed line indicates TE = 1.0 (transferred direction matches native self-control). One same-family and one cross-family pair tested; generality is not established.}}{22}{figure.6}\protected@file@percent }
 \newlabel{fig:transfer_efficiency}{{6}{22}{Transfer efficiency (TE) of DIM refusal directions with 95\% bootstrap confidence intervals. Same-family transfer within the Qwen family (green) achieves TE $\geq $ 1.0, while cross-family transfer between Qwen and Gemma (red) collapses to near-zero. Dashed line indicates TE = 1.0 (transferred direction matches native self-control). One same-family and one cross-family pair tested; generality is not established}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.5}Transfer Coverage Matrix}{22}{subsection.11.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {11.6}Scope and Caveats}{22}{subsection.11.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {12}Limitations}{22}{section.12}\protected@file@percent }
-\newlabel{sec:limitations}{{12}{22}{Limitations}{section.12}{}}
 \citation{arditi2024refusal}
 \@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Transfer coverage matrix. \textbf  {Tested}: direct behavioral transfer run with TE reported. \textbf  {Dim-mismatch}: hidden dimensions differ; not tested for behavioral transfer (would require projection). \textbf  {Cross-family}: tested where dimensions match. All behavioral transfer claims are restricted to dim-matched, directly-tested pairs only.}}{23}{table.11}\protected@file@percent }
 \newlabel{tab:coverage}{{11}{23}{Transfer coverage matrix. \textbf {Tested}: direct behavioral transfer run with TE reported. \textbf {Dim-mismatch}: hidden dimensions differ; not tested for behavioral transfer (would require projection). \textbf {Cross-family}: tested where dimensions match. All behavioral transfer claims are restricted to dim-matched, directly-tested pairs only}{table.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12}Limitations}{23}{section.12}\protected@file@percent }
+\newlabel{sec:limitations}{{12}{23}{Limitations}{section.12}{}}
 \citation{templeton2024scaling}
-\@writefile{toc}{\contentsline {section}{\numberline {13}Conclusion}{24}{section.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1}Not covered in this study}{24}{subsection.12.1}\protected@file@percent }
 \bibstyle{plainnat}
 \bibdata{references}
 \bibcite{arditi2024refusal}{{1}{2024}{{Arditi et~al.}}{{Arditi, Obeso, Syed, Paleka, Rimsky, Gurnee, and Nanda}}}
 \bibcite{beaglehole2025universal}{{2}{2025}{{Beaglehole et~al.}}{{Beaglehole, Radhakrishnan, Boix-Adsera, et~al.}}}
 \bibcite{dettmers2022int8}{{3}{2022}{{Dettmers et~al.}}{{Dettmers, Lewis, Belkada, and Zettlemoyer}}}
 \bibcite{elhage2022toy}{{4}{2022}{{Elhage et~al.}}{{Elhage, Hume, Olsson, Schiefer, Henighan, Kravec, Hatfield-Dodds, Lasenby, Drain, Chen, Grosse, McCandlish, Kaplan, Amodei, Wattenberg, and Olah}}}
+\@writefile{toc}{\contentsline {section}{\numberline {13}Conclusion}{25}{section.13}\protected@file@percent }
 \bibcite{fiottokaufman2024nnsight}{{5}{2024}{{Fiotto-Kaufman et~al.}}{{Fiotto-Kaufman, Loftus, Todd, Brinkmann, Pal, Troitskii, Ripa, Belfki, Rager, Juang, Mueller, Marks, Sharma, Lucchetti, Prakash, Brodley, and Bau}}}
 \bibcite{frantar2022gptq}{{6}{2023}{{Frantar et~al.}}{{Frantar, Ashkboos, Hoefler, and Alistarh}}}
 \bibcite{jorgensen2023mean}{{7}{2023}{{Jorgensen et~al.}}{{Jorgensen, Cope, Schoots, and Sherburn}}}
@@ -169,27 +170,27 @@
 \bibcite{wei2024brittleness}{{17}{2024}{{Wei et~al.}}{{Wei, Huang, Huang, Xie, Qi, Xia, Mittal, Wang, and Henderson}}}
 \bibcite{zou2023representation}{{18}{2023{a}}{{Zou et~al.}}{{Zou, Phan, Chen, Campbell, Guo, Ren, Pan, Yin, Mazeika, Dombrowski, Goel, Li, Byun, Wang, Mallen, Basart, Koyejo, Song, Fredrikson, Kolter, and Hendrycks}}}
 \bibcite{zou2023gcg}{{19}{2023{b}}{{Zou et~al.}}{{Zou, Wang, Carlini, Nasr, Kolter, and Fredrikson}}}
-\@writefile{toc}{\contentsline {section}{\numberline {A}Contrastive Prompt Sets}{26}{appendix.A}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Harmful Prompts (Direction Extraction)}{26}{subsection.A.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Contrastive Prompt Sets}{27}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Harmful Prompts (Direction Extraction)}{27}{subsection.A.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Harmless Prompts (Direction Extraction)}{27}{subsection.A.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Test Prompts (Evaluation)}{27}{subsection.A.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Layer-by-layer coherent refusal profiles across Qwen and Gemma families. Optimal depths shift from 60\% (Qwen 3B/7B) to 50\% (Qwen 14B/32B) and 30--40\% (Gemma 2B/9B). Steering at 70\% depth fails catastrophically for larger Qwen models.}}{28}{figure.7}\protected@file@percent }
-\newlabel{fig:layer-profiles-detail}{{7}{28}{Layer-by-layer coherent refusal profiles across Qwen and Gemma families. Optimal depths shift from 60\% (Qwen 3B/7B) to 50\% (Qwen 14B/32B) and 30--40\% (Gemma 2B/9B). Steering at 70\% depth fails catastrophically for larger Qwen models}{figure.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Test Prompts (Evaluation)}{28}{subsection.A.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {B}Complete Results Tables}{28}{appendix.B}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {B.1}Qwen 2.5 Size Sweep --- Full Layer Profiles}{28}{subsection.B.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Qwen 2.5-3B-Instruct (36 layers)}}{28}{table.12}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Qwen 2.5-7B-Instruct (28 layers)}}{28}{table.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Gemma 2 Size Sweep --- Full Layer Profiles}{28}{subsection.B.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Qwen 2.5-14B-Instruct (48 layers)}}{29}{table.14}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces Qwen 2.5-32B-Instruct (64 layers)}}{29}{table.15}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Layer-by-layer coherent refusal profiles across Qwen and Gemma families. Optimal depths shift from 60\% (Qwen 3B/7B) to 50\% (Qwen 14B/32B) and 30--40\% (Gemma 2B/9B). Steering at 70\% depth fails catastrophically for larger Qwen models.}}{29}{figure.7}\protected@file@percent }
+\newlabel{fig:layer-profiles-detail}{{7}{29}{Layer-by-layer coherent refusal profiles across Qwen and Gemma families. Optimal depths shift from 60\% (Qwen 3B/7B) to 50\% (Qwen 14B/32B) and 30--40\% (Gemma 2B/9B). Steering at 70\% depth fails catastrophically for larger Qwen models}{figure.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Qwen 2.5-7B-Instruct (28 layers)}}{29}{table.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Gemma 2 Size Sweep --- Full Layer Profiles}{29}{subsection.B.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Direction Norms and Steering Success}{29}{subsection.B.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {B.4}Mistral 7B --- Architecture Failure}{29}{subsection.B.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {C}Example Steered Outputs}{29}{appendix.C}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {C.1}Coherent Refusal Examples}{29}{subsection.C.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {C.2}Garbled Output Examples}{29}{subsection.C.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Gemma 2-2B-IT (26 layers)}}{30}{table.16}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Gemma 2-9B-IT (42 layers)}}{30}{table.17}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Qwen 2.5-14B-Instruct (48 layers)}}{30}{table.14}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces Qwen 2.5-32B-Instruct (64 layers)}}{30}{table.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.2}Garbled Output Examples}{30}{subsection.C.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {C.3}Normal (Unsteered) Output Examples}{30}{subsection.C.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Gemma 2-2B-IT (26 layers)}}{31}{table.16}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Gemma 2-9B-IT (42 layers)}}{31}{table.17}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Gemma 2-27B-IT (46 layers)}}{31}{table.18}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Direction norm vs coherent refusal rate across models. Norms in the 20--90 range predict successful steering. Gemma 27B's extreme norms (350+) coincide with complete steering failure (0\% coherent refusal), consistent with the hypothesis that refusal becomes too distributed for single-direction capture at scale.}}{31}{figure.8}\protected@file@percent }
 \newlabel{fig:norm-refusal}{{8}{31}{Direction norm vs coherent refusal rate across models. Norms in the 20--90 range predict successful steering. Gemma 27B's extreme norms (350+) coincide with complete steering failure (0\% coherent refusal), consistent with the hypothesis that refusal becomes too distributed for single-direction capture at scale}{figure.8}{}}
